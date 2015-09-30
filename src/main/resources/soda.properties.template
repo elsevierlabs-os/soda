@@ -1,0 +1,24 @@
+# Public (accessible from anywhere) and Private (accessible from Databricks)
+# IP addresses of the Soda and Solr servers
+PUBLIC_IP=
+PRIVATE_IP=
+
+# Local directories
+MESH_DATA_DIR=
+
+# Indexing Properties
+SOLR_URL=http://localhost:8983/solr/texttagger
+INDEXDATA_BUCKET_NAME=
+
+## MeSH
+INDEXDATA_FOLDER=
+LEX_NAME=
+
+# Annotation Properties
+SODA_URL=http://%s:8080/soda
+ANNOT_10_INPUTDIR=
+
+ANNOT_10_LEXNAME=
+ANNOT_10_OUTPUTDIR=
+WEBANNO_XMI_OUTPUTDIR=
+WEBANNO_TSV_OUTPUTDIR=

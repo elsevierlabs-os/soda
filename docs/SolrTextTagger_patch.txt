@@ -1,0 +1,13 @@
+diff --git a/src/main/java/org/opensextant/solrtexttagger/Tagger.java b/src/main/java/org/opensextant/solrtexttagger/Tagger.java
+index f3d8c23..4873354 100644
+--- a/src/main/java/org/opensextant/solrtexttagger/Tagger.java
++++ b/src/main/java/org/opensextant/solrtexttagger/Tagger.java
+@@ -143,7 +143,7 @@ public abstract class Tagger {
+         byteRefAtt.fillBytesRef();
+         term = byteRefAtt.getBytesRef();
+         if (term.length == 0) {
+-          throw new IllegalArgumentException("term: " + term.utf8ToString() + " analyzed to a zero-length token");
++          //throw new IllegalArgumentException("term: " + term.utf8ToString() + " analyzed to a zero-length token");
+         }
+       } else { //no current cluster AND lookup == false ...
+         term = null; //skip this token
