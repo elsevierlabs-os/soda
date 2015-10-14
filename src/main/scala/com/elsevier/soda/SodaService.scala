@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service
 import org.apache.solr.client.solrj.impl.HttpSolrClient.RemoteSolrException
 import java.util.Collections
 import org.apache.solr.common.util.ContentStream
+import org.apache.solr.common.SolrInputDocument
 
 case class DictInfo(dictName: String, numEntries: Long)
 
@@ -25,9 +26,12 @@ case class DictInfo(dictName: String, numEntries: Long)
 class SodaService {
 
     val props = SodaUtils.props()
-    val SOLR_URL = "http://localhost:8983/solr/texttagger"
+    val solrQueryUrl = props("SOLR_QUERY_URL")
+    val solrUpdateUrls = props("SOLR_INDEX_URL").split(",").toList
 
-    val solr = new HttpSolrClient(SOLR_URL)
+    val querySolr = new HttpSolrClient(solrQueryUrl)
+    val updateSolrs = solrUpdateUrls.map(url => new HttpSolrClient(url))
+    
     val phraseChunker = new PhraseChunker()
     val stopwords = SodaUtils.stopwords()
 
@@ -70,7 +74,7 @@ class SodaService {
         req.setMethod(SolrRequest.METHOD.POST)
         req.setPath("/tag")
         req.setParams(params)
-        val resp = req.process(solr).getResponse()
+        val resp = req.process(querySolr).getResponse()
         // extract the tags
         val tags = resp.get("tags").asInstanceOf[java.util.ArrayList[_]]
             .flatMap(tagInfo => {
@@ -152,7 +156,7 @@ class SodaService {
             params.add(CommonParams.ROWS, "1")
             params.add(CommonParams.FQ, buildFq(lexName, false))
             params.add(CommonParams.FL, "id,tagname_str")
-            val resp = solr.query(params)
+            val resp = querySolr.query(params)
             val results = resp.getResults()
             if (results.getNumFound() > 0) {
                 val sdoc = results.get(0)
@@ -205,7 +209,7 @@ class SodaService {
         params.add(CommonParams.ROWS, "0")
         params.add(FacetParams.FACET, "true")
         params.add(FacetParams.FACET_FIELD, "tagtype")
-        val resp = solr.query(params)
+        val resp = querySolr.query(params)
         resp.getFacetFields().head
             .getValues()
             .map(v => DictInfo(v.getName(), v.getCount()))
@@ -223,7 +227,7 @@ class SodaService {
         req.setMethod(SolrRequest.METHOD.POST)
         req.setPath("/tag")
         req.setParams(params)
-        val resp = req.process(solr).getResponse()
+        val resp = req.process(querySolr).getResponse()
         resp.get("response")
             .asInstanceOf[SolrDocumentList]
             .iterator()
@@ -244,7 +248,7 @@ class SodaService {
         params.add("fq", "tagtype:%s".format(lexName))
         params.add("fl", "tagname_str")
         params.add("rows", "1")
-        val resp = solr.query(params)
+        val resp = querySolr.query(params)
         val results = resp.getResults()
         if (results.getNumFound() == 0) List()
         else {
@@ -256,7 +260,7 @@ class SodaService {
     }
     
     def getPhraseMatches(lexName: String, phrase: String, matching: String): 
-    		List[String] = {
+            List[String] = {
         val fieldName = matching match {
             case "exact" => "tagname_str"
             case "lower" => "tagname_str"
@@ -266,9 +270,9 @@ class SodaService {
         }
         val suffix = fieldName.substring(fieldName.lastIndexOf("_"))
         val fieldValue = suffix match {
-        	case "_nrm" => Normalizer.normalizeCasePunct(phrase)
+            case "_nrm" => Normalizer.normalizeCasePunct(phrase)
             case "_srt" => Normalizer.sortWords(
-            		Normalizer.normalizeCasePunct(phrase))
+                    Normalizer.normalizeCasePunct(phrase))
             case "_stm" => Normalizer.stemWords(
                 Normalizer.sortWords(
                 Normalizer.normalizeCasePunct(phrase)))
@@ -276,11 +280,11 @@ class SodaService {
         }
         val params = new ModifiableSolrParams()
         params.add("q", "%s:\"%s\"".format(fieldName, 
-        	SodaUtils.escapeLucene(fieldValue)))
+            SodaUtils.escapeLucene(fieldValue)))
         params.add("fq", "tagtype:%s".format(lexName))
         params.add("fl", "id,score")
         params.add("rows", "5")
-        val resp = solr.query(params)
+        val resp = querySolr.query(params)
         val results = resp.getResults()
         if (results.getNumFound() == 0) List()
         else {
@@ -291,5 +295,61 @@ class SodaService {
                     else id.substring(id.length - 1) 
                 }).toList.distinct
         }
+    }
+    
+    // update methods
+    
+    def delete(lexName: String, shouldCommit: Boolean = true): Unit = {
+        updateSolrs.foreach(updateSolr => {
+            updateSolr.deleteByQuery("tagtype:%s".format(lexName))
+            if (shouldCommit) updateSolr.commit()
+        })
+    }
+    
+    def add(id: String, names: List[String], lexName: String, 
+            shouldCommit: Boolean): Unit = {
+        updateSolrs.foreach(updateSolr => {
+            if (!id.isEmpty && !names.isEmpty) {
+                val idoc = new SolrInputDocument()
+                // first document
+                idoc.addField("id", id)
+                idoc.addField("tagtype", lexName)
+                idoc.addField("tagsubtype", "x") // exact match
+                val ncNames = ArrayBuffer[String]()
+                val sortedNames = ArrayBuffer[String]()
+                val stemmedNames = ArrayBuffer[String]()
+                names.map(name => {
+                    idoc.addField("tagname_str", name)
+                    idoc.addField("tagname_stt", name)
+                    val ncName = Normalizer.normalizeCasePunct(name)
+                    if (!ncName.isEmpty) ncNames += ncName
+                    val sortedName = Normalizer.sortWords(ncName)
+                    if (!sortedName.isEmpty) sortedNames += sortedName
+                    val stemmedName = Normalizer.stemWords(sortedName)
+                    if (!stemmedName.isEmpty) stemmedNames += stemmedName
+                    ncNames.toSet[String].foreach(ncName => 
+                        idoc.addField("tagname_nrm", ncName))
+                    sortedNames.toSet[String].foreach(sortedName => 
+                        idoc.addField("tagname_srt", sortedName))
+                    stemmedNames.toSet[String].foreach(stemmedName => 
+                        idoc.addField("tagname_stm", stemmedName))
+                })
+                updateSolr.add(idoc)
+                // second document
+                // additional record for lowercase FST matching, id has
+                // trailing _ that is removed by interface
+                val idoc2 = new SolrInputDocument()
+                idoc2.addField("id", id + "_")
+                idoc2.addField("tagtype", lexName)
+                idoc2.addField("tagsubtype", "l") // lowercase match
+                names.filter(name => !name.isEmpty)
+                    .map(name => {
+                        idoc2.addField("tagname_str", name)
+                        idoc2.addField("tagname_stt", name.toLowerCase())
+                    })
+                updateSolr.add(idoc2)
+            }
+            if (shouldCommit) updateSolr.commit()
+        })
     }
 }

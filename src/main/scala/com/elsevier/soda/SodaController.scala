@@ -15,11 +15,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 @Controller
 class SodaController @Autowired() (sodaService: SodaService) {
     
-    val SOLR_URL = "http://localhost:8983/solr/texttagger"
-        
-    val jsonMapper = new ObjectMapper()
-    val solrIndexer = new SolrIndexer(SOLR_URL, null, null, null, null)
-    
     @RequestMapping(value=Array("/index.json"), method=Array(RequestMethod.GET))
     def index(req: HttpServletRequest, res: HttpServletResponse, 
             model: Model): String = {
@@ -101,18 +96,18 @@ class SodaController @Autowired() (sodaService: SodaService) {
         val matching = params.getOrElse("matching", "exact").asInstanceOf[String]
         if (lexicon.isEmpty) {
             model.addAttribute("response", 
-            	SodaUtils.error("Lexicon must be specified"))
+                SodaUtils.error("Lexicon must be specified"))
         } else if (text.isEmpty) {
             model.addAttribute("response", 
-            	SodaUtils.error("Text must be specified"))
+                SodaUtils.error("Text must be specified"))
         } else {
             val ids = sodaService.getPhraseMatches(lexicon, text, matching)
             val resp = Map(
-            	"status" -> "ok",
-            	"text" -> text,
-            	"lexicon" -> lexicon,
-            	"matching" -> matching,
-            	"ids" -> ids)
+                "status" -> "ok",
+                "text" -> text,
+                "lexicon" -> lexicon,
+                "matching" -> matching,
+                "ids" -> ids)
             model.addAttribute("response", SodaUtils.jsonBuild(resp))
         }
         "annotate"
@@ -128,7 +123,7 @@ class SodaController @Autowired() (sodaService: SodaService) {
             model.addAttribute("response", 
                 SodaUtils.error("Lexicon must be specified!"))
         } else {
-            solrIndexer.deleteLexicon(lexicon)
+            sodaService.delete(lexicon, true)
             model.addAttribute("response", SodaUtils.OK)
         }
         "annotate"
@@ -151,7 +146,7 @@ class SodaController @Autowired() (sodaService: SodaService) {
             model.addAttribute("response", 
                SodaUtils.error("Both id and names should be specified!"))
         } else {
-            solrIndexer.indexLine(id, names, lexicon, shouldCommit)
+            sodaService.add(id, names, lexicon, shouldCommit)
             model.addAttribute("response", SodaUtils.OK)
         }
         "annotate"
