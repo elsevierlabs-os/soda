@@ -99,13 +99,9 @@ class SodaService {
                 }).toMap
             // remove trailing _ from id for lowercase records
             tags.map(tag => {
-                val id = if (tag._1.endsWith("_")) {
-                    val idlen = tag._1.length
-                    tag._1.substring(0, idlen - 1)
-                } else tag._1
                 val coveredText = text.substring(tag._2, tag._3)
-                val conf = bestScore(coveredText, idNameMap(id)._2) 
-                Annotation("lx", id, tag._2, tag._3,
+                val conf = bestScore(coveredText, idNameMap(tag._1)._2) 
+                Annotation("lx", tag._1.replace("_", ""), tag._2, tag._3,
                     Map(AnnotationHelper.CoveredText -> coveredText,
                         AnnotationHelper.Confidence -> AnnotationHelper.confToStr(conf),
                         AnnotationHelper.Lexicon -> idNameMap(tag._1)._1))
