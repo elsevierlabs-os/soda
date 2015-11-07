@@ -387,13 +387,13 @@ class SodaService {
     }
     
     def annotJson(annots: List[Annotation]): String = {
-        "[" + annots.map(annot => Map(
+        "[" + annots.map(annot => sodaClient.jsonBuild(Map(
             "id" -> annot.id,
             "begin" -> annot.begin,
             "end" -> annot.end,
             "coveredText" -> annot.props(AnnotationHelper.CoveredText),
             "confidence" -> annot.props(AnnotationHelper.Confidence),
             "lexicon" -> annot.props(AnnotationHelper.Lexicon)
-        )).mkString(",") + "]"
+        ))).mkString(",") + "]"
     }
 }

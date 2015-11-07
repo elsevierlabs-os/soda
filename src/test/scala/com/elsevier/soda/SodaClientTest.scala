@@ -9,34 +9,37 @@ import org.junit.Assert
 class SodaClientTest {
 
     val sodaClient = new SodaClient()
+    val props = SodaUtils.props
+    val sodaServerHost = props("LB_HOSTNAME")
     
-//    @Test
+    @Test
     def testIndex(): Unit = {
         val response = sodaClient.get(
-            "http://localhost:8080/soda/index.json")
-        Console.println(response)
+            "http://%s:8080/soda/index.json".format(sodaServerHost))
+        Console.println("index (unparsed) = " + response)
     }
     
-//    @Test
+    @Test
     def testListDicts(): Unit = {
         val response = sodaClient.get(
-            "http://localhost:8080/soda/dicts.json")
-        Console.println(response)
+            "http://%s:8080/soda/dicts.json".format(sodaServerHost))
+        Console.println("dicts (unparsed) = " + response)
     }
     
 //    @Test
     def testDelete(): Unit = {
         val json = """{"lexicon" : "countries"}"""
         val response = sodaClient.post(
-            "http://localhost:8080/soda/delete.json", json)
-        Console.println(response)
+            "http://%s:8080/soda/delete.json".format(sodaServerHost), 
+            json)
+        Console.println("delete (unparsed): " + response)
     }
     
 //    @Test
     def testAdd(): Unit = {
         testDelete()
         val lexicon = "countries"
-        Source.fromFile(new File("data/countries.csv")).getLines
+        Source.fromFile(new File("src/test/resources/countries.csv")).getLines
             .foreach(line => {
                 val cols = line.split(",")
                 val id = "http://www.geonames.org/" + cols(0)
@@ -45,49 +48,51 @@ class SodaClientTest {
                     "id" -> id, "names" -> names, "lexicon" -> lexicon, 
                     "commit" -> false))
                 val response = sodaClient.post(
-                    "http://localhost:8080/soda/add.json", json)
-                Console.println("save(" + id + "): " + response)
+                    "http://%s:8080/soda/add.json".format(sodaServerHost), json)
+                Console.println("add (unparsed): " + response)
             })
         val cjson = sodaClient.jsonBuild(Map(
             "lexicon" -> lexicon, "commit" -> true))
         val response = sodaClient.post(
-            "http://localhost:8080/soda/add.json", cjson)
-        Console.println("commit: " + response)
+            "http://%s:8080/soda/add.json".format(sodaServerHost), cjson)
+        Console.println("add/commit (unparsed): " + response)
     }
     
-//    @Test
+    @Test
     def testLookup(): Unit = {
         val req = sodaClient.jsonBuild(Map(
             "id" -> "http://www.geonames.org/AND", 
             "lexicon" -> "countries"))
         val resp = sodaClient.post(
-            "http://localhost:8080/soda/lookup.json", req)
-        Console.println("response (unparsed): " + resp)
+            "http://%s:8080/soda/lookup.json".format(sodaServerHost), req)
+        Console.println("lookup (unparsed): " + resp)
         val data = sodaClient.jsonParse(resp)
-        Console.println("parsed: " + data)
+        Console.println("lookup (parsed): " + data)
     }
     
-//    @Test
+    @Test
     def testAnnotate(): Unit = {
         val req = sodaClient.jsonBuild(Map(
             "lexicon" -> "countries",
             "text" -> "Institute of Clean Coal Technology, East China University of Science and Technology, Shanghai 200237, China",
             "matching" -> "exact"))
-        val resp = sodaClient.post("http://localhost:8080/soda/annot.json", req)
-        Console.println("response (unparsed): " + resp)
+        val resp = sodaClient.post("http://%s:8080/soda/annot.json".format(sodaServerHost), 
+            req)
+        Console.println("annotate (unparsed): " + resp)
         val data = sodaClient.jsonParseList(resp)
-        Console.println("parsed: " + data)
+        Console.println("annotate (parsed): " + data)
     }
     
-//    @Test
+    @Test
     def testCoverage(): Unit = {
         val req = sodaClient.jsonBuild(Map(
             "text" -> "Institute of Clean Coal Technology, East China University of Science and Technology, Shanghai 200237, China"
         ))
-        val resp = sodaClient.post("http://localhost:8080/soda/coverage.json", req)
-        Console.println("response (unparsed): " + resp)
+        val resp = sodaClient.post("http://%s:8080/soda/coverage.json".format(sodaServerHost), 
+            req)
+        Console.println("coverage (unparsed): " + resp)
         val data = sodaClient.jsonParseList(resp)
-        Console.println("parsed: " + data)
+        Console.println("coverage (parsed): " + data)
     }
     
     @Test
