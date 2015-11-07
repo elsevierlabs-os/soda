@@ -25,12 +25,12 @@ object Normalizer {
     }
     
     def isNumber(s: String): Boolean = {
-    	try { 
-    	    val x = s.toFloat
-    	    true
-    	} catch {
-    	    case e: Exception => false
-    	}
+        try { 
+            val x = s.toFloat
+            true
+        } catch {
+            case e: Exception => false
+        }
     }
     
     def normalizeCasePunct(name: String): String = {

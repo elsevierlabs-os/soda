@@ -3,12 +3,18 @@ package com.elsevier.soda
 import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
-import scala.collection.JavaConversions.asScalaBuffer
+import scala.collection.JavaConversions._
 import org.apache.commons.io.IOUtils
 import scala.io.Source
 
-class SodaClient extends java.io.Serializable {
+import org.json4s._
+//import org.json4s.JsonDSL._
+import org.json4s.jackson.JsonMethods._
+import org.json4s.native.Json
+//import org.json4s.DefaultFormats
 
+class SodaClient extends java.io.Serializable {
+    
     def get(url: String, params: Map[String, String] = Map.empty): String = {
         val parameters = if (params.isEmpty) ""
         else "?" + params.map(kv => 
@@ -38,5 +44,22 @@ class SodaClient extends java.io.Serializable {
         } finally {
             if (conn != null) conn.disconnect()
         }
+    }
+    
+    // http://stackoverflow.com/questions/27948128/how-to-convert-scala-map-into-json-string
+    //http://json4s.org/
+    
+    def jsonBuild(params: Map[String, Any]): String = {
+        Json(DefaultFormats).write(params)
+    }
+    
+    def jsonParse(json: String): Map[String, Any] = {
+        implicit val formats = DefaultFormats
+        parse(json).extract[Map[String, Any]]
+    }
+    
+    def jsonParseList(json: String): List[Map[String, Any]] = {
+        implicit val formats = DefaultFormats
+        parse(json).extract[List[Map[String, Any]]]
     }
 }

@@ -46,18 +46,6 @@ object SodaUtils extends java.io.Serializable {
         }
     }
     
-    def dictInfosToJson(jsonMapper: ObjectMapper, 
-            dictInfos: List[DictInfo]): String = {
-        val dlist = new ArrayList[java.util.Map[String,Object]]()
-        dictInfos.foreach(d => {
-            val dmap = new java.util.HashMap[String,Object]()
-            dmap.put("dictName", d.dictName)
-            dmap.put("numEntries", new java.lang.Long(d.numEntries))
-            dlist.add(dmap)
-        })
-        jsonMapper.writeValueAsString(dlist)
-    }
-
     lazy val luceneReservedChars = """+-&|!(){}[]^"~*?:\"""
         .toCharArray.toSet
 
@@ -88,35 +76,9 @@ object SodaUtils extends java.io.Serializable {
         else ss
     }
         
-    def jsonParse(s: String): Map[String, Any] = {
-        val result = JSON.parseFull(stripEscapes(s))
-        result match {
-            case Some(m: Map[String, Any]) => m
-            case _ => Map.empty
-        }
-    }
-    
-    def jsonParseList(s: String): List[Map[String, Any]] = {
-        val result = JSON.parseFull(stripEscapes(s))
-        result match {
-            case Some(l: List[Map[String, Any]]) => l
-            case _ => List.empty
-        }
-    }
-    
-    def jsonBuild(m: Map[String, Any]): String = {
-        val mw = m.mapValues(v => v match {
-            case v: List[String] => JSONArray(v)
-            case v: Any => v
-        })
-        JSONObject(mw).toString
-    }
-    
-    def error(message: String): String = {
-        val m = Map("status" -> "error",
-                    "message" -> message)
-        jsonBuild(m)
-    }
-    
     def OK(): String = """{"status": "ok"}"""
+        
+    def error(message: String): String = 
+        """{"status": "error", "message": "%s"}""".format(message)
+
 }

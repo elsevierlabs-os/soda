@@ -2,7 +2,7 @@ name := "SoDA"
 
 version := "1.0"
 
-scalaVersion := "2.10.4"
+scalaVersion := "2.10.6"
 
 organization := "com.elsevier"
 
@@ -20,9 +20,12 @@ libraryDependencies ++= Seq(
     "org.apache.lucene" % "lucene-analyzers-common" % "5.0.0",
     "org.apache.opennlp" % "opennlp-maxent" % "3.0.3",
     "org.apache.opennlp" % "opennlp-tools" % "1.5.3",
+    "com.aliasi" % "lingpipe" % "4.0.1",
     "log4j" % "log4j" % "1.2.14",
     // web
-    "com.fasterxml.jackson.core" % "jackson-core" % "2.6.0-rc1",
+    "org.json4s" %% "json4s-native" % "3.3.0",
+    "org.json4s" %% "json4s-jackson" % "3.3.0",
+    //"com.fasterxml.jackson.core" % "jackson-core" % "2.6.0-rc1",
     "org.springframework" % "spring-webmvc" % "4.0.0.RELEASE",
     "jfree" % "jfreechart" % "1.0.13",
     "org.apache.commons" % "commons-lang3" % "3.0",
@@ -38,4 +41,6 @@ libraryDependencies ++= Seq(
     // test
     "com.novocode" % "junit-interface" % "0.8" % "test"
 )
+
+ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) }
 

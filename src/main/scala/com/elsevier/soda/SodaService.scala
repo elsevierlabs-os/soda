@@ -19,6 +19,8 @@ import org.apache.solr.client.solrj.impl.HttpSolrClient.RemoteSolrException
 import java.util.Collections
 import org.apache.solr.common.util.ContentStream
 import org.apache.solr.common.SolrInputDocument
+import java.util.regex.Pattern
+import com.aliasi.chunk.RegExChunker
 
 case class DictInfo(dictName: String, numEntries: Long)
 
@@ -34,6 +36,7 @@ class SodaService {
     
     val phraseChunker = new PhraseChunker()
     val stopwords = SodaUtils.stopwords()
+    val sodaClient = new SodaClient()
 
     def annotate(text: String, lexiconName: String, 
             matchFlag: String): List[Annotation] = {
@@ -260,7 +263,7 @@ class SodaService {
     }
     
     def getPhraseMatches(lexName: String, phrase: String, matching: String): 
-            List[String] = {
+            List[Annotation] = {
         val fieldName = matching match {
             case "exact" => "tagname_str"
             case "lower" => "tagname_str"
@@ -288,13 +291,43 @@ class SodaService {
         val results = resp.getResults()
         if (results.getNumFound() == 0) List()
         else {
-            results.iterator()
+            val ids = results.iterator()
                 .map(doc => {
                     val id = doc.get("id").asInstanceOf[String]
                     if (!id.endsWith("_")) id
-                    else id.substring(id.length - 1) 
+                         else id.substring(id.length - 1)
+                         
                 }).toList.distinct
+            ids.map(id => {
+                val aprops = Map(
+                    AnnotationHelper.CoveredText -> phrase,
+                    AnnotationHelper.Confidence -> "0.0",
+                    AnnotationHelper.Lexicon -> lexName 
+                )
+                Annotation("lx", id, 0, 0, aprops)
+            })
         }
+    }
+    
+    def regex(text: String, patterns: Map[String, String]): 
+            List[Annotation] = {
+        patterns.map(p => {
+                val regex = Pattern.compile(p._2)
+                new RegExChunker(regex, p._1, 1.0D)
+            })
+            .flatMap(chunker => {
+                val chunking = chunker.chunk(text)
+                chunking.chunkSet.map(chunk => {
+                    val start = chunk.start
+                    val end = chunk.end
+                    val ns = chunk.`type`
+                    val covered = text.substring(start, end)
+                    Annotation(ns, "#", start, end, 
+                        Map("coveredText" -> covered, 
+                            "confidence" -> "1.0",
+                            "lexicon" -> ns))
+                })
+            }).toList
     }
     
     // update methods
@@ -351,5 +384,16 @@ class SodaService {
             }
             if (shouldCommit) updateSolr.commit()
         })
+    }
+    
+    def annotJson(annots: List[Annotation]): String = {
+        "[" + annots.map(annot => Map(
+            "id" -> annot.id,
+            "begin" -> annot.begin,
+            "end" -> annot.end,
+            "coveredText" -> annot.props(AnnotationHelper.CoveredText),
+            "confidence" -> annot.props(AnnotationHelper.Confidence),
+            "lexicon" -> annot.props(AnnotationHelper.Lexicon)
+        )).mkString(",") + "]"
     }
 }

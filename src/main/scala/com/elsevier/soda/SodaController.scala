@@ -26,7 +26,7 @@ class SodaController @Autowired() (sodaService: SodaService) {
     def dicts(req: HttpServletRequest, res: HttpServletResponse, 
             model: Model): String = {
         val dictInfos = "[" + sodaService.getDictInfo()
-            .map(dictInfo => SodaUtils.jsonBuild(Map(
+            .map(dictInfo => sodaService.sodaClient.jsonBuild(Map(
                 "lexicon" -> dictInfo.dictName, 
                 "numEntries" -> dictInfo.numEntries)))
             .mkString(", ") + "]"
@@ -37,7 +37,7 @@ class SodaController @Autowired() (sodaService: SodaService) {
     @RequestMapping(value=Array("/annot.json"), method=Array(RequestMethod.POST))
     def annot(req: HttpServletRequest, res: HttpServletResponse, 
             model: Model): String = {
-        val params = SodaUtils.jsonParse(
+        val params = sodaService.sodaClient.jsonParse(
             IOUtils.readLines(req.getInputStream()).mkString)
         val lexicon = params.getOrElse("lexicon", "").asInstanceOf[String]
         val text = params.getOrElse("text", "").asInstanceOf[String]
@@ -46,17 +46,8 @@ class SodaController @Autowired() (sodaService: SodaService) {
             model.addAttribute("response", 
                 SodaUtils.error("Both Lexicon and Text must be specified!"))
         } else {
-            val respAnns = "[" + 
-                sodaService.annotate(text, lexicon, matchFlag)
-                    .map(annotation => SodaUtils.jsonBuild(Map(
-                        "id" -> annotation.id,
-                        "begin" -> annotation.begin,
-                        "end" -> annotation.end,
-                        "coveredText" -> annotation.props(AnnotationHelper.CoveredText),
-                        "confidence" -> annotation.props(AnnotationHelper.Confidence),
-                        "lexicon" -> annotation.props(AnnotationHelper.Lexicon)
-                ))).mkString(", ") + "]"
-            model.addAttribute("response", respAnns)
+            val annots = sodaService.annotate(text, lexicon, matchFlag)
+            model.addAttribute("response", sodaService.annotJson(annots))
         }
         "annotate"
     }
@@ -64,7 +55,7 @@ class SodaController @Autowired() (sodaService: SodaService) {
     @RequestMapping(value=Array("/lookup.json"), method=Array(RequestMethod.POST))
     def lookup(req: HttpServletRequest, res: HttpServletResponse, 
             model: Model): String = {
-        val params = SodaUtils.jsonParse(
+        val params = sodaService.sodaClient.jsonParse(
             IOUtils.readLines(req.getInputStream()).mkString)
         val lexicon = params.getOrElse("lexicon", "").asInstanceOf[String]
         val id = params.getOrElse("id", "").asInstanceOf[String]
@@ -81,7 +72,7 @@ class SodaController @Autowired() (sodaService: SodaService) {
                 "id" -> id,
                 "lexicon" -> lexicon,
                 "names" -> names)
-            model.addAttribute("response", SodaUtils.jsonBuild(resp))
+            model.addAttribute("response", sodaService.sodaClient.jsonBuild(resp))
         }
         "annotate"
     }
@@ -90,7 +81,7 @@ class SodaController @Autowired() (sodaService: SodaService) {
     def matchPhrase(req: HttpServletRequest, res: HttpServletResponse,
             model: Model): String = {
         val s = IOUtils.readLines(req.getInputStream()).mkString
-        val params = SodaUtils.jsonParse(s)        
+        val params = sodaService.sodaClient.jsonParse(s)        
         val lexicon = params.getOrElse("lexicon", "").asInstanceOf[String]
         val text = params.getOrElse("text", "").asInstanceOf[String]
         val matching = params.getOrElse("matching", "exact").asInstanceOf[String]
@@ -101,22 +92,28 @@ class SodaController @Autowired() (sodaService: SodaService) {
             model.addAttribute("response", 
                 SodaUtils.error("Text must be specified"))
         } else {
-            val ids = sodaService.getPhraseMatches(lexicon, text, matching)
-            val resp = Map(
-                "status" -> "ok",
-                "text" -> text,
-                "lexicon" -> lexicon,
-                "matching" -> matching,
-                "ids" -> ids)
-            model.addAttribute("response", SodaUtils.jsonBuild(resp))
+            val annots = sodaService.getPhraseMatches(lexicon, text, matching)
+            model.addAttribute("response", sodaService.annotJson(annots))
         }
+        "annotate"
+    }
+    
+    @RequestMapping(value=Array("/regex.json"), method=Array(RequestMethod.POST))
+    def regex(req: HttpServletRequest, res: HttpServletResponse, 
+            model: Model): String = {
+        val params = sodaService.sodaClient.jsonParse(
+             IOUtils.readLines(req.getInputStream).mkString)
+        val text = params.getOrElse("text", "").asInstanceOf[String]
+        val patterns = params.getOrElse("patterns", Map()).asInstanceOf[Map[String, String]]
+        val annots = sodaService.regex(text, patterns)
+        model.addAttribute("response", sodaService.annotJson(annots))
         "annotate"
     }
 
     @RequestMapping(value=Array("/delete.json"), method=Array(RequestMethod.POST))
     def delete(req: HttpServletRequest, res: HttpServletResponse,
             model: Model): String = {
-        val params = SodaUtils.jsonParse(
+        val params = sodaService.sodaClient.jsonParse(
             IOUtils.readLines(req.getInputStream()).mkString)
         val lexicon = params.getOrElse("lexicon", "").asInstanceOf[String]
         if (lexicon.isEmpty) {
@@ -132,8 +129,8 @@ class SodaController @Autowired() (sodaService: SodaService) {
     @RequestMapping(value=Array("/add.json"), method=Array(RequestMethod.POST))
     def add(req: HttpServletRequest, res: HttpServletResponse, 
             model: Model): String = {
-        val s = IOUtils.readLines(req.getInputStream()).mkString
-        val params = SodaUtils.jsonParse(s)
+        val params = sodaService.sodaClient.jsonParse(
+            IOUtils.readLines(req.getInputStream()).mkString)
         val id = params.getOrElse("id", "").asInstanceOf[String]
         val lexicon = params.getOrElse("lexicon", "").asInstanceOf[String]
         val names = params.getOrElse("names", List.empty).asInstanceOf[List[String]]
@@ -155,7 +152,7 @@ class SodaController @Autowired() (sodaService: SodaService) {
     @RequestMapping(value=Array("/coverage.json"), method=Array(RequestMethod.POST))
     def coverage(req: HttpServletRequest, res: HttpServletResponse, 
             model: Model): String = {
-        val params = SodaUtils.jsonParse(
+        val params = sodaService.sodaClient.jsonParse(
             IOUtils.readLines(req.getInputStream()).mkString)
         val text = params.getOrElse("text", "").asInstanceOf[String]
         if (text.isEmpty) {
@@ -163,7 +160,8 @@ class SodaController @Autowired() (sodaService: SodaService) {
                 SodaUtils.error("Text must be specified!"))
         } else {
             val coverageInfos = "[" + sodaService.getCoverageInfo(text)
-                .map(ci => SodaUtils.jsonBuild(Map("lexicon" -> ci.dictName, 
+                .map(ci => sodaService.sodaClient.jsonBuild(Map(
+                    "lexicon" -> ci.dictName, 
                     "numEntries" -> ci.numEntries)))
                 .mkString(", ") + "]"
             model.addAttribute("response", coverageInfos)
