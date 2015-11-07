@@ -12,6 +12,60 @@ class SodaClientTest {
     val props = SodaUtils.props
     val sodaServerHost = props("LB_HOSTNAME")
     
+    ////////// json parsing tests ///////
+    
+    @Test
+    def testJson1(): Unit = {
+        val params = Map(
+            "lexicon" -> "wikidata",
+            "text" -> "This is the house that Jack built.",
+            "matching" -> "exact"
+        )
+        val req = sodaClient.jsonBuild(params)
+        Console.println("req:" + req)
+        val parsedReq = sodaClient.jsonParse(req)
+        Console.println("parsed:" + parsedReq)
+    }
+    
+    @Test 
+    def testJson2(): Unit = {
+        val params = Map(
+            "regex" -> Map(
+                "doi" -> "some regex pattern",
+                "nature" -> "some other regex pattern"
+            ),
+            "text" -> "This is the house that Jack built.",
+            "mathching" -> "regex"
+        )
+        val req = sodaClient.jsonBuild(params)
+        Console.println("req:" + req)
+        val parsedReq = sodaClient.jsonParse(req)
+        Console.println("parsed:" + parsedReq)
+    }
+    
+    @Test
+    def testJson3(): Unit = {
+        val output = "[" + 
+            List(sodaClient.jsonBuild(Map(
+                "id" -> "http://foo.org/entity/1234",
+                "begin" -> 30,
+                "end" -> 33,
+                "coveredText" -> "foo",
+                "confidence" -> 1.0
+            )),
+            sodaClient.jsonBuild(Map(
+                "id" -> "http://foo.org/entity/3456",
+                "begin" -> 20,
+                "end" -> 23,
+                "coveredText" -> "bar",
+                "confidence" -> 1.0
+            ))).mkString(",") + "]"
+        val results = sodaClient.jsonParseList(output)
+        Console.println("results:" + results)
+    }
+
+    ///////////// client-server tests ///////////
+    
     @Test
     def testIndex(): Unit = {
         val response = sodaClient.get(
@@ -96,52 +150,18 @@ class SodaClientTest {
     }
     
     @Test
-    def testJson1(): Unit = {
-        val params = Map(
-            "lexicon" -> "wikidata",
-            "text" -> "This is the house that Jack built.",
-            "matching" -> "exact"
-        )
-        val req = sodaClient.jsonBuild(params)
-        Console.println("req:" + req)
-        val parsedReq = sodaClient.jsonParse(req)
-        Console.println("parsed:" + parsedReq)
-    }
-    
-    @Test 
-    def testJson2(): Unit = {
-        val params = Map(
-            "regex" -> Map(
-                "doi" -> "some regex pattern",
-                "nature" -> "some other regex pattern"
-            ),
-            "text" -> "This is the house that Jack built.",
-            "mathching" -> "regex"
-        )
-        val req = sodaClient.jsonBuild(params)
-        Console.println("req:" + req)
-        val parsedReq = sodaClient.jsonParse(req)
-        Console.println("parsed:" + parsedReq)
-    }
-    
-    @Test
-    def testJson3(): Unit = {
-        val output = "[" + 
-            List(sodaClient.jsonBuild(Map(
-                "id" -> "http://foo.org/entity/1234",
-                "begin" -> 30,
-                "end" -> 33,
-                "coveredText" -> "foo",
-                "confidence" -> 1.0
-            )),
-            sodaClient.jsonBuild(Map(
-                "id" -> "http://foo.org/entity/3456",
-                "begin" -> 20,
-                "end" -> 23,
-                "coveredText" -> "bar",
-                "confidence" -> 1.0
-            ))).mkString(",") + "]"
-        val results = sodaClient.jsonParseList(output)
-        Console.println("results:" + results)
+    def testRegex(): Unit = {
+        val patterns = Map("parenthesized" -> "\\(.*?\\)")
+        val text = Source.fromFile(new File("src/test/resources/sildenafil.txt"))
+            .getLines.mkString
+        val req = sodaClient.jsonBuild(Map(
+            "patterns" -> patterns,
+            "text" -> text,
+            "matching" -> "regex"
+        ))
+        val resp = sodaClient.post("http://%s:8080/soda/regex.json".format(sodaServerHost), req)
+        Console.println("regex (unparsed): " + resp)
+        val data = sodaClient.jsonParseList(resp)
+        Console.println("regex (parsed): " + data)
     }
 }

@@ -101,6 +101,7 @@ class SodaController @Autowired() (sodaService: SodaService) {
     @RequestMapping(value=Array("/regex.json"), method=Array(RequestMethod.POST))
     def regex(req: HttpServletRequest, res: HttpServletResponse, 
             model: Model): String = {
+        Console.println("Did I get here?")
         val params = sodaService.sodaClient.jsonParse(
              IOUtils.readLines(req.getInputStream).mkString)
         val text = params.getOrElse("text", "").asInstanceOf[String]

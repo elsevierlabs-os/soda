@@ -309,8 +309,7 @@ class SodaService {
         }
     }
     
-    def regex(text: String, patterns: Map[String, String]): 
-            List[Annotation] = {
+    def regex(text: String, patterns: Map[String, String]): List[Annotation] = {
         patterns.map(p => {
                 val regex = Pattern.compile(p._2)
                 new RegExChunker(regex, p._1, 1.0D)
@@ -320,12 +319,12 @@ class SodaService {
                 chunking.chunkSet.map(chunk => {
                     val start = chunk.start
                     val end = chunk.end
-                    val ns = chunk.`type`
+                    val matchedRegex = chunk.`type`
                     val covered = text.substring(start, end)
-                    Annotation(ns, "#", start, end, 
-                        Map("coveredText" -> covered, 
-                            "confidence" -> "1.0",
-                            "lexicon" -> ns))
+                    Annotation("lx", "#", start, end, 
+                        Map(AnnotationHelper.CoveredText -> covered, 
+                            AnnotationHelper.Confidence -> "1.0",
+                            AnnotationHelper.Lexicon -> matchedRegex))
                 })
             }).toList
     }
