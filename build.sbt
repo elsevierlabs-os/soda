@@ -23,8 +23,8 @@ libraryDependencies ++= Seq(
     "com.aliasi" % "lingpipe" % "4.0.1",
     "log4j" % "log4j" % "1.2.14",
     // web
-    "org.json4s" %% "json4s-native" % "3.3.0",
-    "org.json4s" %% "json4s-jackson" % "3.3.0",
+    "org.json4s" %% "json4s-native" % "3.2.10",
+    "org.json4s" %% "json4s-jackson" % "3.2.10",
     //"com.fasterxml.jackson.core" % "jackson-core" % "2.6.0-rc1",
     "org.springframework" % "spring-webmvc" % "4.0.0.RELEASE",
     "jfree" % "jfreechart" % "1.0.13",

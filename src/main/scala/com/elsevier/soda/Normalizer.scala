@@ -36,7 +36,7 @@ object Normalizer {
     def normalizeCasePunct(name: String): String = {
         name.split("\\s+")
             .map(word => removeTrailingPunct(word))
-//            .filter(!isNumber(_))
+            .filter(!isNumber(_))
             .mkString(" ")
             .toLowerCase()
     }

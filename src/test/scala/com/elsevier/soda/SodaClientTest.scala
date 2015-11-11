@@ -3,7 +3,6 @@ package com.elsevier.soda
 import org.junit.Test
 import scala.io.Source
 import java.io.File
-import scala.util.parsing.json.JSON
 import org.junit.Assert
 
 class SodaClientTest {
