@@ -8,7 +8,9 @@ organization := "com.elsevier"
 
 sbtVersion := "0.13.1"
 
-jetty(config = "src/main/resources/jetty.xml")
+enablePlugins(JettyPlugin)
+
+containerConfigFile := Some(file("src/main/resources/jetty.xml"))
 
 libraryDependencies ++= Seq(
     // main
