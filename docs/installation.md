@@ -10,6 +10,7 @@
 	- [Install Solr](#install-solr)
 	- [Deploy SolrTextTagger JAR](#deploy-solrtexttagger-jar)
 	- [Install Jetty](#install-jetty)
+	- [Configure SoDA](#configure-soda)
 	- [Build SoDA and Deploy](#build-soda-and-deploy)
 
 _(generated with [DocToc](http://doctoc.herokuapp.com/))_
@@ -194,6 +195,12 @@ To start and stop Jetty, we use the following commands. Jetty will start up on p
     $ cd jetty-9.2.11
     $ bin/jetty.sh start
     $ bin/jetty.sh stop
+
+####Configure SoDA
+
+All configuration is done via the soda.properties file in src/main/resources. A template file is provided with the relevant properties to set and their descriptions (in comments) at [soda.properties.template](https://github.com/elsevierlabs-os/soda/blob/master/src/main/resources/soda.properties.template).
+
+If you have a single Solr instance and are installing SoDA on the same box as Solr, then you can just copy the soda.properties.template to soda.properties. Otherwise, follow the directions in the soda.properties.template file to set the properties.
 
 ####Build SoDA and Deploy
 
