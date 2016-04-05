@@ -23,3 +23,12 @@ Callers invoke the annotate (TBD) function with the necessary parameters, which 
 * [SoDA Installation and Configuration](docs/installation.md)
 * [SoDA Application Programming Interface (API)](docs/api.md) 
 
+### Citing
+
+If you need to cite SoDA in your work, please use the following DOI:
+
+[![DOI](https://zenodo.org/badge/21245/elsevierlabs-os/soda.svg)](https://zenodo.org/badge/latestdoi/21245/elsevierlabs-os/soda) 
+
+Pal, Sujit (2015). Solr Dictionary Annotator [Computer Software]; https://github.com/elsevierlabs-os/soda
+
+
