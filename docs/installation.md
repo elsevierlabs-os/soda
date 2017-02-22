@@ -63,6 +63,8 @@ Once in, install git (to download various softwares from github), Java 8 (the bo
     $ curl -O http://www.scala-lang.org/.../scala-2.10.4.tgz
     $ tar xvf scala-2.10.4
 
+    $ curl https://bintray.com/sbt/rpm/rpm | \
+        sudo tee /etc/yum.repos.d/bintray-sbt-rpm.repo
     $ sudo yum install sbt
 
 After this, you should also set up the following environment variables in your .bash_profile file.
