@@ -6,7 +6,9 @@ scalaVersion := "2.10.6"
 
 organization := "com.elsevier"
 
-sbtVersion := "0.13.1"
+sbtVersion := "0.13.15"
+
+sbtPlugin := true
 
 enablePlugins(JettyPlugin)
 
@@ -22,7 +24,7 @@ libraryDependencies ++= Seq(
     "org.apache.lucene" % "lucene-analyzers-common" % "5.0.0",
     "org.apache.opennlp" % "opennlp-maxent" % "3.0.3",
     "org.apache.opennlp" % "opennlp-tools" % "1.5.3",
-    "com.aliasi" % "lingpipe" % "4.0.1",
+    "com.aliasi" % "lingpipe" % "4.0.1" from "http://www.java2s.com/Code/JarDownload/lingpipe/lingpipe-4.0.1.jar.zip",
     "log4j" % "log4j" % "1.2.14",
     // web
     "org.json4s" %% "json4s-native" % "3.2.10",
