@@ -1,6 +1,6 @@
-##SoDA Installation and Configuration
+## SoDA Installation and Configuration
 
-###Table of Contents###
+### Table of Contents
 
 - [Hardware and OS](#hardware-and-os)
 - [Databricks Environment](#databricks-environment)
@@ -17,7 +17,7 @@ _(generated with [DocToc](http://doctoc.herokuapp.com/))_
 
 This document lists out the steps needed to setup a SoDA server in the AWS cloud and visible to your Databricks cluster.
 
-###Hardware and OS
+### Hardware and OS
 
 The Hardware used for a single SoDA server box is a AWS EC2 r3.large instance (15.5GB RAM, 32 GB SSD, 2vCPU). In addition, we have an additional 25GB SSD disk to hold the index and software. The server was running Amazon Linux (Centos/Redhat based distribution), commands are based on this flavor, please make the necessary mental adjustments for other Linux flavors such as Ubuntu.
 
@@ -38,17 +38,17 @@ Additional hardware will be provided as an EBS volume. Follow instructions on th
     $ cd home
 
 
-###Databricks Environment
+### Databricks Environment
 
 The server needs to be accessible from within the Databricks notebook environment, so it is required to have a "private" IP address that is visible to the Databricks cluster. In addition, for maintenance work on the server, it has a "public" IP address into which one can ssh in with a PEM file.
 
-###Software Installation
+### Software Installation
 
 For all the installation work that follows, we will use the public IP. You can log into the newly provisioned box as follows:
 
     laptop$ ssh -i ~/.ssh/solr-databricks.pem ec2-user@public_ip
 
-####Install Base Software
+#### Install Base Software
 
 Once in, install git (to download various softwares from github), Java 8 (the box comes with Java 7 but I wanted to run the latest), maven (to build SolrTextTagger), Scala and sbt (to build soda).
 
@@ -84,7 +84,7 @@ Finally, source the .bash_profile file so the new environment variables become a
 
     $ . ~/.bash_profile
 
-####Build SolrTextTagger
+#### Build SolrTextTagger
 
 Download SolrTextTagger and build it.
 
@@ -102,7 +102,7 @@ Finally run the unit tests and build the package for deployment.
 
 This will create a solr-text-tagger-2.1-SNAPSHOT.jar file which you will need to install into the Solr installation that we will set up next.
 
-####Install Solr 
+#### Install Solr 
 
 First step is to download and expand Solr. __Please note__ that SolrTextTagger is built with Solr-5.0.0 and there is a change in a Lucene method for the Terms object in the latest version (5.2.0) which will cause it to throw an exception. So make sure you use Solr-5.0.0 as well.
 
@@ -124,7 +124,7 @@ Now we customize the techproducts example collection to make it our own.
     $ cd texttagger
     $ vim core.properties # replace techproducts with texttagger
 
-####Deploy SolrTextTagger JAR
+#### Deploy SolrTextTagger JAR
 
 SolrTextTagger is a Solr plugin that provides a custom request handler for text tagging. In order to enable this functionality in Solr, we need to put the JAR file in the Solr extensions classpath, and make configuration changes to declare new field types and analyzer chains that are specific to SolrTextTagger.
 
@@ -183,7 +183,7 @@ When we need to stop Solr, we can just do:
 
     $ bin/solr stop
 
-####Install Jetty
+#### Install Jetty
 
 Finally we install the Jetty webserver. Similar to Maven and Scala, all we need to do is download a tarball that works with Java 8 (Jetty 9.2.11 in our case) and expand it into our local directory.
 
@@ -198,13 +198,13 @@ To start and stop Jetty, we use the following commands. Jetty will start up on p
     $ bin/jetty.sh start
     $ bin/jetty.sh stop
 
-####Configure SoDA
+#### Configure SoDA
 
 All configuration is done via the soda.properties file in src/main/resources. A template file is provided with the relevant properties to set and their descriptions (in comments) at [soda.properties.template](https://github.com/elsevierlabs-os/soda/blob/master/src/main/resources/soda.properties.template).
 
 If you have a single Solr instance and are installing SoDA on the same box as Solr, then you can just copy the soda.properties.template to soda.properties. Otherwise, follow the directions in the soda.properties.template file to set the properties.
 
-####Build SoDA and Deploy
+#### Build SoDA and Deploy
 
 Finally, we build our SoDA WAR file. This is done as follows:
 
@@ -213,5 +213,5 @@ Finally, we build our SoDA WAR file. This is done as follows:
     $ sbt package
     $ cp target/scala-2.10/soda-1.0-SNAPSHOT.war ../jetty-9.2.11/webapps/
 
-and restart Jetty. You should be able to see the SoDA index page at http://public_ip:8080/soda/index.html.
+and restart Jetty. You should be able to see the SoDA index page at http://public_ip:8080/soda/index.json (it just returns a status: OK JSON response).
 

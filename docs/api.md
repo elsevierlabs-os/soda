@@ -1,8 +1,8 @@
-##SoDA API
+## SoDA API
 
 This document describes the SoDA API. The SoDA API uses JSON over HTTP and is thus language agnostic. A SoDA request is built as a JSON document and is sent to the SoDA JSON endpoint over HTTP POST. SoDA responds with another JSON document indicating success or failure.
 
-###Table of Contents###
+### Table of Contents
 
 - [Index](#index)
 - [List Lexicons](#list-lexicons)
@@ -17,7 +17,7 @@ This document describes the SoDA API. The SoDA API uses JSON over HTTP and is th
 
 The following section provides details about each of the endpoints.
 
-###Index
+### Index
 
 This just returns a status OK JSON message. It is meant to test if the SoDA web component is alive.
 
@@ -55,7 +55,7 @@ __EXAMPLE SCALA CLIENT__
 
 ----
 
-###List Lexicons
+### List Lexicons
 
 Returns a list of lexicons available to annotate against. Currently we only allow the ability to annotate documents against a single lexicon. When requiring annotations against multiple documents, it is recommended to annotate documents separately against each lexicon, then merge the annotations.
 
@@ -94,7 +94,7 @@ __EXAMPLE SCALA CLIENT__
 
 ----
 
-###Annotate Document
+### Annotate Document
 
 Annotates text against a specified lexicon and match type. Match type can be one of the following.
 
@@ -171,7 +171,7 @@ __EXAMPLE SCALA CLIENT__
 
 ----
 
-###Delete Lexicon
+### Delete Lexicon
 
 A single SoDA index can contain entries from multiple lexicons. This operation deletes all entries in a Lexicon.
 
@@ -216,7 +216,7 @@ __EXAMPLE SCALA CLIENT__
 
 ----
 
-###Add Lexicon Entries
+### Add Lexicon Entries
 
 Adds new entries to a named Lexicon.
 
@@ -284,7 +284,7 @@ __EXAMPLE SCALA CLIENT__
 
 ----
 
-###Coverage Info
+### Coverage Info
 
 This can be used to find which lexicons are appropriate for annotating your text. The service allows you to send a piece of text to all hosted lexicons and returns with the number of matches found in each.
 
