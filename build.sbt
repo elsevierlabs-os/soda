@@ -2,13 +2,11 @@ name := "SoDA"
 
 version := "1.0"
 
-scalaVersion := "2.10.6"
+scalaVersion := "2.11.7"
 
 organization := "com.elsevier"
 
-sbtVersion := "0.13.15"
-
-sbtPlugin := true
+//sbtVersion := "0.13.1"
 
 enablePlugins(JettyPlugin)
 
@@ -24,7 +22,8 @@ libraryDependencies ++= Seq(
     "org.apache.lucene" % "lucene-analyzers-common" % "5.0.0",
     "org.apache.opennlp" % "opennlp-maxent" % "3.0.3",
     "org.apache.opennlp" % "opennlp-tools" % "1.5.3",
-    "com.aliasi" % "lingpipe" % "4.0.1" from "http://clojars.org/repo/com/aliasi/lingpipe/4.0.1/lingpipe-4.0.1.jar",
+//    "com.aliasi" % "lingpipe" % "4.0.1",
+    "de.julielab" % "aliasi-lingpipe" % "4.1.0",
     "log4j" % "log4j" % "1.2.14",
     // web
     "org.json4s" %% "json4s-native" % "3.2.10",
