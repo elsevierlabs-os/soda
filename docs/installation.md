@@ -211,7 +211,7 @@ Finally, we build our SoDA WAR file. This is done as follows:
     $ cd soda
     $ # build the WAR file in target/scala-2.10/soda-1.0-SNAPSHOT.war
     $ sbt package
-    $ cp target/scala-2.10/soda-1.0-SNAPSHOT.war ../jetty-9.2.11/webapps/
+    $ cp target/scala-2.10/soda-1.0-SNAPSHOT.war ../jetty-9.2.11/webapps/soda.war
 
 and restart Jetty. You should be able to see the SoDA index page at http://public_ip:8080/soda/index.json (it just returns a status: OK JSON response).
 
