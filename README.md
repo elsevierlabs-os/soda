@@ -20,6 +20,7 @@ Callers invoke the annotate (TBD) function with the necessary parameters, which 
 
 ### More Information
 
+* [Running SoDA from Docker](docs/docker-setup.md)
 * [SoDA Installation and Configuration](docs/installation.md)
 * [SoDA Application Programming Interface (API)](docs/api.md) 
 
