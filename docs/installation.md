@@ -117,7 +117,7 @@ We then setup our index using an example as our template. We could (and probably
     
 Now we customize the techproducts example collection to make it our own.
 
-    $ cd examples
+    $ cd example
     $ mv techproducts texttagger
     $ cd texttagger/solr
     $ mv techproducts texttagger
