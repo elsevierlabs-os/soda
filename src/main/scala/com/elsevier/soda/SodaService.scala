@@ -130,7 +130,8 @@ class SodaService {
                 Annotation("lx", tag._1, tag._2, tag._3, 
                     Map(AnnotationHelper.CoveredText -> coveredText, 
                         AnnotationHelper.Confidence -> "1.0",
-                        AnnotationHelper.Lexicon -> idTagtypeMap(tag._1)))
+                        AnnotationHelper.Lexicon -> lexName))
+//                        AnnotationHelper.Lexicon -> idTagtypeMap(tag._1)))
                 })
         }
     }
