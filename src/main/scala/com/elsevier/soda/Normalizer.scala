@@ -24,6 +24,13 @@ object Normalizer {
         else word
     }
     
+    def removeEnclosingQuotes(word: String): String = {
+        if ((word.startsWith("\"") && word.endsWith("\"")) ||
+                (word.startsWith("'") && word.endsWith("'"))) 
+            word.substring(1, word.length() - 1)
+        else word
+    }
+    
     def isNumber(s: String): Boolean = {
         try { 
             val x = s.toFloat
@@ -36,6 +43,8 @@ object Normalizer {
     def normalizeCasePunct(name: String): String = {
         name.split("\\s+")
             .map(word => removeTrailingPunct(word))
+            .map(word => removeEnclosingQuotes(word))
+            .map(word => word.replaceAll("\"", ""))
             .filter(!isNumber(_))
             .mkString(" ")
             .toLowerCase()

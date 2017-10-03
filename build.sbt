@@ -6,7 +6,7 @@ scalaVersion := "2.10.6"
 
 organization := "com.elsevier"
 
-sbtVersion := "0.13.1"
+//sbtVersion := "0.13.1"
 
 enablePlugins(JettyPlugin)
 

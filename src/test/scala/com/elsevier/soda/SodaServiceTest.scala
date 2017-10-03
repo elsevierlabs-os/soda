@@ -16,6 +16,22 @@ class SodaServiceTest {
         val tags = sodaService.tag(text, "mesh", true)
         AnnotationHelper.prettyPrintSodaAnnotations(tags)
     }
+
+    @Test
+    def testChunkTaggingSort(): Unit = {
+        val text = FileUtils.readFileToString(
+            new File("src/test/resources/sildenafil.txt"))
+        val tags = sodaService.chunkAndTag(text, "mesh", "tagname_srt")
+        AnnotationHelper.prettyPrintSodaAnnotations(tags)
+    }
+    
+//    @Test
+    def testChunkTaggingStem(): Unit = {
+        val text = FileUtils.readFileToString(
+            new File("src/test/resources/sildenafil.txt"))
+        val tags = sodaService.chunkAndTag(text, "mesh", "tagname_stm")
+        AnnotationHelper.prettyPrintSodaAnnotations(tags)
+    }
     
 //    @Test
     def testBatchTagging(): Unit = {
@@ -40,8 +56,15 @@ class SodaServiceTest {
         val ids = sodaService.getPhraseMatches("wikidata", phrase, "stem")
         Console.println("ids=" + ids)
     }
-    
-    @Test
+
+//    @Test
+    def testPhraseMatchesWithSort(): Unit = {
+        val phrase = "marie curie"
+        val ids = sodaService.getPhraseMatches("wikidata", phrase, "sort")
+        Console.println("ids=" + ids)
+    }
+
+//    @Test
     def testRegexTagging1(): Unit = {
        val patterns = Map(
            "ZIPCODE" -> "\\d{5}(-\\d{4})?",
@@ -56,11 +79,11 @@ class SodaServiceTest {
            Console.println(text)
            val annots = sodaService.regex(text, patterns)
            annots.foreach(a => Console.println("(%d, %d) [%s] %s"
-               .format(a.begin, a.end, a.namespace, a.props("coveredText"))))
+               .format(a.begin, a.end, a.namespace, a.props("covered"))))
        })
     }
     
-    @Test
+//    @Test
     def testRegexTagging2(): Unit = {
         val testDataDir = "/Users/palsujit/Elsevier/OA-STM-Corpus/SimpleText/SimpleText_auto"
         val doiPattern = Map("DOI" -> "doi:10\\.\\d{4,}\\/[a-z0-9\\.]+" )
@@ -70,7 +93,7 @@ class SodaServiceTest {
                 val text = Source.fromFile(file).getLines.mkString("\n")
                 val annots = sodaService.regex(text, doiPattern)
                 annots.foreach(a => Console.println("(%d, %d) [%s] %s"
-                    .format(a.begin, a.end, a.namespace, a.props("coveredText"))))
+                    .format(a.begin, a.end, a.namespace, a.props("covered"))))
             })
     }
 }
