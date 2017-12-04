@@ -151,7 +151,7 @@ __EXAMPLE PYTHON CLIENT__
         "matching" : "exact"
     }
     req = json.dumps(params)
-    resp = requests.post("http://host:port/soda/annot.json", json=req)
+    resp = requests.post("http://host:port/soda/annot.json", data=req)
     print json.loads(resp.text)
 ````
 
@@ -198,7 +198,7 @@ __EXAMPLE PYTHON CLIENT__
 
     params = { "lexicon" : "countries" }
     req = json.dumps(params)
-    resp = requests.post("http://host:port/soda/delete.json", json=req)
+    resp = requests.post("http://host:port/soda/delete.json", data=req)
     print json.loads(resp.text)
 ````
 
@@ -261,7 +261,7 @@ __EXAMPLE PYTHON CLIENT__
         "commit" : false
     }
     req = json.dumps(params)
-    resp = requests.post("http://host:port/soda/add.json", json=req)
+    resp = requests.post("http://host:port/soda/add.json", data=req)
     print json.loads(resp.text)
 ```
 
