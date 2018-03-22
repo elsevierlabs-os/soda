@@ -103,6 +103,7 @@ Annotates text against a specified lexicon and match type. Match type can be one
 * __punct__ - removes punctuation and phrase chunks input, then matches phrases against lexicon entries. Also case insensitive.
 * __sort__ - same as punct, except that words in phrase chunks are sorted and matched against similarly sorted lexicon entries.
 * __stem__ - same as sort, except words in phrases are stemmed using Porter stemmer and matched against similarly stemmed lexicon entries.
+* __fuzzy__ - matches texts by creating fuzzy Solr query, the level of fuzziness can be controlled with number of characters. The similar the word, the higher the confidence.
 
 __URL__ http://host:port/soda/annot.json
 
@@ -138,6 +139,47 @@ __OUTPUT__
         }
     ]
 ````
+
+__FUZZY SEARCH__
+
+Default value of fuzziness is 1, but any integer can be passed , which will indicate number of fuzzy characters being considered.
+
+__INPUT__
+
+````json
+    {
+        "lexicon":"gender",
+        "text":"Mayer made Fortune magazine history in 2013, Most Powerful women , and 40 Under 40 at the same time",
+        "matching":"fuzzy",
+        "fuzziness":1
+    }
+````
+
+__OUTPUT__
+
+````json
+    [
+        {
+            "matchedText": "male",
+            "begin": 6,
+            "lexicon": "gender",
+            "confidence": "0.75",
+            "id": "man",
+            "coveredText": "made",
+            "end": 9
+        },
+        {
+            "matchedText": "women",
+            "begin": 59,
+            "lexicon": "gender",
+            "confidence": "1.0",
+            "id": "female",
+            "coveredText": "women",
+            "end": 64
+        }
+    ]
+````
+
 
 __EXAMPLE PYTHON CLIENT__
 

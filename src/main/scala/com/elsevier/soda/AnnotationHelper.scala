@@ -12,6 +12,7 @@ object AnnotationHelper {
     val CoveredText = "covered"
     val Confidence = "conf"
     val Lexicon = "lexicon"
+    val MatchedText = "matchedText"
         
     def confToStr(conf: Double) = "%.3f".format(conf)
 
