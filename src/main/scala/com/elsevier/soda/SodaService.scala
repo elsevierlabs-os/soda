@@ -22,6 +22,7 @@ import org.apache.solr.common.util.ContentStream
 import org.apache.solr.common.SolrInputDocument
 import java.util.regex.Pattern
 
+import org.apache.solr.client.solrj.util.ClientUtils
 import com.aliasi.chunk.RegExChunker
 
 case class DictInfo(dictName: String, numEntries: Long)
@@ -194,7 +195,7 @@ class SodaService {
         var currentStart = 0
         words.foreach(word => {
             val params = new ModifiableSolrParams()
-            params.add(CommonParams.Q, "tagname_str:" + word + "~" + fuzzinessValue)
+            params.add(CommonParams.Q, "tagname_str:" + ClientUtils.escapeQueryChars(word) + "~" + fuzzinessValue)
             params.add(CommonParams.ROWS, "1")
             params.add(CommonParams.FQ, buildFq(lexName, false))
             params.add(CommonParams.FL, "id,tagname_str")
