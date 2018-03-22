@@ -3,7 +3,7 @@ package com.elsevier.soda
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.JavaConversions.asScalaIterator
 import scala.collection.JavaConversions.collectionAsScalaIterable
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, HashMap}
 import org.apache.commons.lang3.StringUtils
 import org.apache.solr.client.solrj.SolrRequest
 import org.apache.solr.client.solrj.impl.HttpSolrClient
@@ -17,9 +17,12 @@ import org.apache.solr.common.util.NamedList
 import org.springframework.stereotype.Service
 import org.apache.solr.client.solrj.impl.HttpSolrClient.RemoteSolrException
 import java.util.Collections
+
 import org.apache.solr.common.util.ContentStream
 import org.apache.solr.common.SolrInputDocument
 import java.util.regex.Pattern
+
+import org.apache.solr.client.solrj.util.ClientUtils
 import com.aliasi.chunk.RegExChunker
 
 case class DictInfo(dictName: String, numEntries: Long)
@@ -39,7 +42,7 @@ class SodaService {
     val sodaClient = new SodaClient()
 
     def annotate(text: String, lexiconName: String, 
-            matchFlag: String): List[Annotation] = {
+            matchFlag: String, fuzziness: Int = 1): List[Annotation] = {
         val lexName = if (lexiconName.endsWith("-full")) 
                           lexiconName.substring(0, lexiconName.length() - 5)
                       else lexiconName
@@ -49,6 +52,7 @@ class SodaService {
             case "punct" => chunkAndTag(text, lexName, "tagname_nrm")
             case "sort" => chunkAndTag(text, lexName, "tagname_srt")
             case "stem" => chunkAndTag(text, lexName, "tagname_stm")
+            case "fuzzy" => fuzzySearch(text, lexName, fuzziness)
             case _ => List()
         }
         if (lexiconName.endsWith("-full")) annotations
@@ -183,6 +187,42 @@ class SodaService {
             coveredText.trim().length() > 3 && !stopwords.contains(coveredText)    
         }).toList
     }
+
+    def fuzzySearch(text: String, lexName: String, fuzzinessValue: Int): List[Annotation] = {
+        val words = text.split(" ")
+        // run each of these phrases against
+        val tags = ArrayBuffer[Annotation]()
+        var currentStart = 0
+        words.foreach(word => {
+            val params = new ModifiableSolrParams()
+            params.add(CommonParams.Q, "tagname_str:" + ClientUtils.escapeQueryChars(word) + "~" + fuzzinessValue)
+            params.add(CommonParams.ROWS, "1")
+            params.add(CommonParams.FQ, buildFq(lexName, false))
+            params.add(CommonParams.FL, "id,tagname_str")
+
+            val resp = querySolr.query(params)
+            val results = resp.getResults()
+            if (results.getNumFound() > 0) {
+                val sdoc = results.get(0)
+                val id = sdoc.getFieldValue("id").asInstanceOf[String]
+                val names = sdoc.getFieldValues("tagname_str")
+                  .map(_.asInstanceOf[String])
+                  .toList
+                val (confidence, matchedName) = bestScoreWithName(word, names)
+                tags += (Annotation("lx", id, currentStart, currentStart+ word.length - 1,
+                    Map(AnnotationHelper.CoveredText -> word,
+                        AnnotationHelper.Confidence -> confidence.toString,
+                        AnnotationHelper.Lexicon -> lexName,
+                        AnnotationHelper.MatchedText -> matchedName)))
+            }
+            currentStart = currentStart+ word.length + 1
+        })
+        tags.filter(annot => {
+            val coveredText = annot.props(AnnotationHelper.CoveredText)
+              .toLowerCase()
+            !stopwords.contains(coveredText)
+        }).toList
+    }
     
     def buildFq(tagtype: String, lowerCaseInput: Boolean): String = {
         val tagSubtypeQuery = Array("tagsubtype", if (lowerCaseInput) "l" else "x")
@@ -204,6 +244,21 @@ class SodaService {
         if (matchedSpan.length() == 0) 0.0D
         else if (score > matchedSpan.length()) 0.0D
         else (1.0D - (1.0D * score / matchedSpan.length()))                               
+    }
+
+    def bestScoreWithName(matchedSpan: String, names: List[String]) = {
+        val scoreName = new HashMap[Int,String]()
+        val score = names.map(name => {
+            scoreName.put(StringUtils.getLevenshteinDistance(matchedSpan, name), name)
+            StringUtils.getLevenshteinDistance(matchedSpan, name)})
+          .sorted
+          .head
+        if (matchedSpan.length() == 0) (0.0D, null)
+        else if (score > matchedSpan.length()) (0.0D, null)
+        else {
+            val confidenceScore = (1.0D - (1.0D * score / matchedSpan.length()))
+            (confidenceScore, scoreName(score))
+        }
     }
     
     def getDictInfo(): List[DictInfo] = {

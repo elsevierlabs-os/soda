@@ -42,11 +42,12 @@ class SodaController @Autowired() (sodaService: SodaService) {
         val lexicon = params.getOrElse("lexicon", "").asInstanceOf[String]
         val text = params.getOrElse("text", "").asInstanceOf[String]
         val matchFlag = params.getOrElse("matching", "exact").asInstanceOf[String]
+        val fuzziness = params.getOrElse("fuzziness", 1.0).asInstanceOf[Double]
         if (lexicon.isEmpty || text.isEmpty) {
             model.addAttribute("response", 
                 SodaUtils.error("Both Lexicon and Text must be specified!"))
         } else {
-            val annots = sodaService.annotate(text, lexicon, matchFlag)
+            val annots = sodaService.annotate(text, lexicon, matchFlag, fuzziness.toInt)
             model.addAttribute("response", sodaService.annotJson(annots))
         }
         "annotate"
