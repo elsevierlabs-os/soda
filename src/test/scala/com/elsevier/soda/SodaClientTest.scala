@@ -1,166 +1,82 @@
 package com.elsevier.soda
 
-import org.junit.Test
-import scala.io.Source
-import java.io.File
-import org.junit.Assert
+import com.elsevier.soda.messages._
+import org.junit.{Assert, FixMethodOrder, Test}
+import org.junit.runners.MethodSorters
 
+import scala.io.Source
+
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class SodaClientTest {
 
-    val sodaClient = new SodaClient()
-    val props = SodaUtils.props
-    val sodaServerHost = props("LB_HOSTNAME")
-    
-    ////////// json parsing tests ///////
-    
+    val sodaClient = new SodaClient("http://localhost:8080")
+
+    val lexiconName = "test_countries-2"
+    val lookupId = "http://test-countries-2.com/ABW"
+    val matchings = List("exact", "lower", "stop", "stem1", "stem2", "stem3")
+    val text = "Institute of Clean Coal Technology, East China University of Science and Technology, Shanghai 200237, China"
+
     @Test
-    def testJson1(): Unit = {
-        val params = Map(
-            "lexicon" -> "wikidata",
-            "text" -> "This is the house that Jack built.",
-            "matching" -> "exact"
-        )
-        val req = sodaClient.jsonBuild(params)
-        Console.println("req:" + req)
-        val parsedReq = sodaClient.jsonParse(req)
-        Console.println("parsed:" + parsedReq)
-    }
-    
-    @Test 
-    def testJson2(): Unit = {
-        val params = Map(
-            "regex" -> Map(
-                "doi" -> "some regex pattern",
-                "nature" -> "some other regex pattern"
-            ),
-            "text" -> "This is the house that Jack built.",
-            "mathching" -> "regex"
-        )
-        val req = sodaClient.jsonBuild(params)
-        Console.println("req:" + req)
-        val parsedReq = sodaClient.jsonParse(req)
-        Console.println("parsed:" + parsedReq)
-    }
-    
-    @Test
-    def testJson3(): Unit = {
-        val output = "[" + 
-            List(sodaClient.jsonBuild(Map(
-                "id" -> "http://foo.org/entity/1234",
-                "begin" -> 30,
-                "end" -> 33,
-                "coveredText" -> "foo",
-                "confidence" -> 1.0
-            )),
-            sodaClient.jsonBuild(Map(
-                "id" -> "http://foo.org/entity/3456",
-                "begin" -> 20,
-                "end" -> 23,
-                "coveredText" -> "bar",
-                "confidence" -> 1.0
-            ))).mkString(",") + "]"
-        val results = sodaClient.jsonParseList(output)
-        Console.println("results:" + results)
+    def test_001_index(): Unit = {
+        val indexResponse = sodaClient.index()
+        Assert.assertEquals("ok", indexResponse.status)
     }
 
-    ///////////// client-server tests ///////////
-    
     @Test
-    def testIndex(): Unit = {
-        val response = sodaClient.get(
-            "http://%s:8080/soda/index.json".format(sodaServerHost))
-        Console.println("index (unparsed) = " + response)
-    }
-    
-    @Test
-    def testListDicts(): Unit = {
-        val response = sodaClient.get(
-            "http://%s:8080/soda/dicts.json".format(sodaServerHost))
-        Console.println("dicts (unparsed) = " + response)
-    }
-    
-//    @Test
-    def testDelete(): Unit = {
-        val json = """{"lexicon" : "countries"}"""
-        val response = sodaClient.post(
-            "http://%s:8080/soda/delete.json".format(sodaServerHost), 
-            json)
-        Console.println("delete (unparsed): " + response)
-    }
-    
-//    @Test
-    def testAdd(): Unit = {
-        testDelete()
-        val lexicon = "countries"
-        Source.fromFile(new File("src/test/resources/countries.csv")).getLines
+    def test_002_add(): Unit = {
+        var numLoaded = 0
+        Source.fromFile("src/main/resources/test-countries.tsv")
+            .getLines()
             .foreach(line => {
-                val cols = line.split(",")
-                val id = "http://www.geonames.org/" + cols(0)
-                val names = cols.toList
-                val json = sodaClient.jsonBuild(Map(
-                    "id" -> id, "names" -> names, "lexicon" -> lexicon, 
-                    "commit" -> false))
-                val response = sodaClient.post(
-                    "http://%s:8080/soda/add.json".format(sodaServerHost), json)
-                Console.println("add (unparsed): " + response)
+                val Array(id, syns) = line.split("\t")
+                val idModified = id.replace("test-countries", "test-countries-2")
+                val names = syns.split("\\|").toArray
+                val commit = (numLoaded % 100 == 0)
+                val addResponse = sodaClient.add(lexiconName, idModified, names, commit)
+                Assert.assertEquals("ok", addResponse.status)
+                numLoaded += 1
             })
-        val cjson = sodaClient.jsonBuild(Map(
-            "lexicon" -> lexicon, "commit" -> true))
-        val response = sodaClient.post(
-            "http://%s:8080/soda/add.json".format(sodaServerHost), cjson)
-        Console.println("add/commit (unparsed): " + response)
+        val finalResponse = sodaClient.add(lexiconName, null, null, true)
+        Assert.assertEquals("ok", finalResponse.status)
     }
-    
+
     @Test
-    def testLookup(): Unit = {
-        val req = sodaClient.jsonBuild(Map(
-            "id" -> "http://www.geonames.org/AND", 
-            "lexicon" -> "countries"))
-        val resp = sodaClient.post(
-            "http://%s:8080/soda/lookup.json".format(sodaServerHost), req)
-        Console.println("lookup (unparsed): " + resp)
-        val data = sodaClient.jsonParse(resp)
-        Console.println("lookup (parsed): " + data)
+    def test_003_dicts(): Unit = {
+        val dictResponse = sodaClient.dicts()
+        Assert.assertEquals("ok", dictResponse.status)
+        Assert.assertEquals(1, dictResponse.lexicons.filter(lc => lc.lexicon.equals(lexiconName)).size)
     }
-    
+
     @Test
-    def testAnnotate(): Unit = {
-        val req = sodaClient.jsonBuild(Map(
-            "lexicon" -> "countries",
-            "text" -> "Institute of Clean Coal Technology, East China University of Science and Technology, Shanghai 200237, China",
-            "matching" -> "exact"))
-        val resp = sodaClient.post("http://%s:8080/soda/annot.json".format(sodaServerHost), 
-            req)
-        Console.println("annotate (unparsed): " + resp)
-        val data = sodaClient.jsonParseList(resp)
-        Console.println("annotate (parsed): " + data)
+    def test_004_annot(): Unit = {
+        matchings.foreach(matching => {
+            val annotResponse = sodaClient.annot(lexiconName, text, matching)
+            Assert.assertEquals("ok", annotResponse.status)
+            Assert.assertTrue(annotResponse.annotations.size > 0)
+        })
     }
-    
+
     @Test
-    def testCoverage(): Unit = {
-        val req = sodaClient.jsonBuild(Map(
-            "text" -> "Institute of Clean Coal Technology, East China University of Science and Technology, Shanghai 200237, China"
-        ))
-        val resp = sodaClient.post("http://%s:8080/soda/coverage.json".format(sodaServerHost), 
-            req)
-        Console.println("coverage (unparsed): " + resp)
-        val data = sodaClient.jsonParseList(resp)
-        Console.println("coverage (parsed): " + data)
+    def test_005_coverage(): Unit = {
+        matchings.foreach(matching => {
+            val coverageResponse = sodaClient.coverage(text, matching)
+            Assert.assertEquals("ok", coverageResponse.status)
+            Assert.assertEquals(1, coverageResponse.lexicons.filter(lc => lc.lexicon.equals(lexiconName)).size)
+        })
     }
-    
+
     @Test
-    def testRegex(): Unit = {
-        val patterns = Map("parenthesized" -> "\\(.*?\\)")
-        val text = Source.fromFile(new File("src/test/resources/sildenafil.txt"))
-            .getLines.mkString
-        val req = sodaClient.jsonBuild(Map(
-            "patterns" -> patterns,
-            "text" -> text,
-            "matching" -> "regex"
-        ))
-        val resp = sodaClient.post("http://%s:8080/soda/regex.json".format(sodaServerHost), req)
-        Console.println("regex (unparsed): " + resp)
-        val data = sodaClient.jsonParseList(resp)
-        Console.println("regex (parsed): " + data)
+    def test_006_lookup(): Unit = {
+        val lookupResponse = sodaClient.lookup(lexiconName, lookupId)
+        Assert.assertEquals("ok", lookupResponse.status)
+        Assert.assertEquals(1, lookupResponse.entries.size)
+    }
+
+    @Test
+    def test_007_delete(): Unit = {
+        val deleteResponseOne = sodaClient.delete(lexiconName, lookupId)
+        Assert.assertEquals("ok", deleteResponseOne.status)
+        val deleteResponse = sodaClient.delete(lexiconName, "*")
+        Assert.assertEquals("ok", deleteResponse.status)
     }
 }

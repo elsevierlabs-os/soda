@@ -2,42 +2,31 @@ name := "SoDA"
 
 version := "1.0"
 
-scalaVersion := "2.10.6"
+scalaVersion := "2.12.6"
 
 organization := "com.elsevier"
 
 enablePlugins(JettyPlugin)
 
 libraryDependencies ++= Seq(
-    // main
-    "org.openrdf.sesame" % "sesame-rio" % "2.7.10",
-    "org.openrdf.sesame" % "sesame-rio-ntriples" % "2.7.10",
-    "com.amazonaws" % "aws-java-sdk" % "1.9.39",
-    "org.apache.solr" % "solr-solrj" % "5.0.0",
-    "org.apache.lucene" % "lucene-core" % "5.0.0",
-    "org.apache.lucene" % "lucene-analyzers-common" % "5.0.0",
-    "org.apache.opennlp" % "opennlp-maxent" % "3.0.3",
-    "org.apache.opennlp" % "opennlp-tools" % "1.5.3",
-    "com.aliasi" % "lingpipe" % "4.0.1" from "http://clojars.org/repo/com/aliasi/lingpipe/4.0.1/lingpipe-4.0.1.jar",
-    "log4j" % "log4j" % "1.2.14",
-    // web
-    "org.json4s" %% "json4s-native" % "3.2.10",
-    "org.json4s" %% "json4s-jackson" % "3.2.10" % "provided",
-    "org.springframework" % "spring-webmvc" % "4.0.0.RELEASE",
-    "jfree" % "jfreechart" % "1.0.13",
-    "org.apache.commons" % "commons-lang3" % "3.0",
-    "net.sourceforge.collections" % "collections-generic" % "4.01",
-    "commons-beanutils" % "commons-beanutils" % "1.8.3",
+    // web-mvc
+    "org.springframework" % "spring-webmvc" % "5.0.7.RELEASE",
+    "org.springframework" % "spring-context" % "5.0.7.RELEASE",
+    "javax.servlet" % "javax.servlet-api" % "4.0.1" % "provided",
+    // json
+    "com.google.code.gson" % "gson" % "2.8.5",
     "commons-io" % "commons-io" % "2.4",
-    // client
-    "org.apache.httpcomponents" % "httpclient" % "4.0-alpha4",
-    "dom4j" % "dom4j" % "1.6.1",
-    // local container
-    "org.eclipse.jetty" % "jetty-webapp" % "9.3.0.M1" % "compile,container",
-    "org.eclipse.jetty" % "jetty-jsp" % "9.3.0.M1" % "container",
+    // distance metric
+    "org.apache.commons" % "commons-text" % "1.4",
+    // http
+    "com.softwaremill.sttp" %% "core" % "1.2.0-RC6",
+    "com.softwaremill.sttp" %% "json4s" % "1.2.0-RC6",
+    // solr
+    "org.apache.solr" % "solr-solrj" % "7.3.1",
+    // logging
+    "org.slf4j" % "slf4j-api" % "1.7.25",
+    "org.slf4j" % "slf4j-log4j12" % "1.7.25",
     // test
-    "com.novocode" % "junit-interface" % "0.8" % "test"
+    "com.novocode" % "junit-interface" % "0.11" % Test
 )
-
-ivyScala := ivyScala.value map { _.copy(overrideScalaVersion = true) }
 

@@ -1,77 +1,106 @@
 package com.elsevier.soda
 
-import java.net.HttpURLConnection
-import java.net.URL
-import java.net.URLEncoder
-import scala.collection.JavaConversions._
-import org.apache.commons.io.IOUtils
-import scala.io.Source
-import org.json4s._
-import org.json4s.jackson.JsonMethods._
-import org.json4s.native.Json
-import scala.util.parsing.json.JSON
+import com.elsevier.soda.messages._
+import com.google.gson.Gson
+import com.softwaremill.sttp._
 
-class SodaClient extends java.io.Serializable {
-    
-    def get(url: String, params: Map[String, String] = Map.empty): String = {
-        val parameters = if (params.isEmpty) ""
-        else "?" + params.map(kv => 
-            List(kv._1, URLEncoder.encode(kv._2, "UTF-8")).mkString("="))
-            .mkString("&")
-        Source.fromURL(url + parameters).getLines.mkString
-    } 
-    
-    def post(url: String, json: String): String = {
-        var conn: HttpURLConnection = null
-        try {
-            // set up connection
-            val soda = new URL(url)
-            conn = soda.openConnection().asInstanceOf[HttpURLConnection]
-            conn.setRequestMethod("POST")
-            conn.setRequestProperty("Content-Type", "multipart/form-data")
-            conn.setRequestProperty("Content-Length", json.length().toString)
-            conn.setUseCaches(false)
-            conn.setDoInput(true)
-            conn.setDoOutput(true)
-            // write input into connection
-            IOUtils.write(json, conn.getOutputStream())
-            // return response
-            IOUtils.readLines(conn.getInputStream()).mkString
-        } catch {
-            case e: Exception => SodaUtils.error(e.getMessage)
-        } finally {
-            if (conn != null) conn.disconnect()
-        }
-    }
-    
-    def jsonBuild(params: Map[String, Any]): String = {
-        Json(DefaultFormats).write(params)
-    }
-    
-    // json4s is broken for version 3.10 which Spark requires, the
-    // bug was fixed in 3.11 but Spark 1.5 still uses json4s 3.10.
-    
-//    def jsonParse(json: String): Map[String, Any] = {
-//        implicit val formats = DefaultFormats
-//        parse(json).extract[Map[String, Any]]
-//    }
-//    
-//    def jsonParseList(json: String): List[Map[String, Any]] = {
-//        implicit val formats = DefaultFormats
-//        Json(DefaultFormats).parse(json).extract[List[Map[String, Any]]]
-//    }
+final case class SodaClientException(private val message: String = "",
+                                     private val cause: Throwable = None.orNull)
+    extends Exception(message, cause)
 
-    def jsonParse(json: String): Map[String, Any] = {
-        JSON.parseFull(json) match {
-            case Some(e) => e.asInstanceOf[Map[String, Any]]
-            case None => Map()
+
+class SodaClient(sodaUrl: String) extends java.io.Serializable {
+
+    val sodaUrlPrefix = sodaUrl
+
+    implicit val backend = HttpURLConnectionBackend()
+    val gson = new Gson()
+
+
+    def index(): IndexResponse = {
+        val request = sttp.get(uri"$sodaUrlPrefix/index.json")
+        val response = request.send()
+        val resp = response.body match {
+            case Right(jsonBody) => gson.fromJson(jsonBody, classOf[IndexResponse])
+            case Left(message) => IndexResponse("error", message)
         }
+        if ("error".equals(resp.status)) throw new SodaClientException(resp.message)
+        else resp
     }
-    
-    def jsonParseList(json: String): List[Map[String, Any]] = {
-        JSON.parseFull(json) match {
-            case Some(e) => e.asInstanceOf[List[Map[String, Any]]]
-            case None => List()
+
+    def add(lexicon: String, id: String, names: Array[String], commit: Boolean): AddResponse = {
+        val addRequest = AddRequest(lexicon, id, names, commit)
+        val request = sttp.body(gson.toJson(addRequest))
+            .post(uri"$sodaUrlPrefix/add.json")
+        val response = request.send()
+        val resp = response.body match {
+            case Right(jsonBody) => gson.fromJson(jsonBody, classOf[AddResponse])
+            case Left(message) => AddResponse("error", message, addRequest)
         }
+        if ("error".equals(resp.status)) throw new SodaClientException(resp.message)
+        else resp
+    }
+
+    def delete(lexicon: String, id: String): DeleteResponse = {
+        val deleteRequest = DeleteRequest(lexicon, id)
+        val request = sttp.body(gson.toJson(deleteRequest))
+            .post(uri"$sodaUrlPrefix/delete.json")
+        val response = request.send()
+        val resp = response.body match {
+            case Right(jsonBody) => gson.fromJson(jsonBody, classOf[DeleteResponse])
+            case Left(message) => DeleteResponse("error", message, deleteRequest)
+        }
+        if ("error".equals(resp.status)) throw new SodaClientException(resp.message)
+        else resp
+    }
+
+    def annot(lexicon: String, text: String, matching: String): AnnotResponse = {
+        val annotRequest = AnnotRequest(lexicon, text, matching)
+        val request = sttp.body(gson.toJson(annotRequest))
+            .post(uri"$sodaUrlPrefix/annot.json")
+        val response = request.send()
+        val resp = response.body match {
+            case Right(jsonBody) => gson.fromJson(jsonBody, classOf[AnnotResponse])
+            case Left(message) => AnnotResponse("error", message, null)
+        }
+        if ("error".equals(resp.status)) throw new SodaClientException(resp.message)
+        else resp
+    }
+
+    def dicts(): DictResponse = {
+        val request = sttp.get(uri"$sodaUrlPrefix/dicts.json")
+        val response = request.send()
+        val resp = response.body match {
+            case Right(jsonBody) => gson.fromJson(jsonBody, classOf[DictResponse])
+            case Left(message) => DictResponse("error", message, null)
+        }
+        if ("error".equals(resp.status)) throw new SodaClientException(resp.message)
+        else resp
+    }
+
+    def coverage(text: String, matching: String): CoverageResponse = {
+        val coverageRequest = CoverageRequest(text, matching)
+        val request = sttp.body(gson.toJson(coverageRequest))
+            .post(uri"$sodaUrlPrefix/coverage.json")
+        val response = request.send()
+        val resp = response.body match {
+            case Right(jsonBody) => gson.fromJson(jsonBody, classOf[CoverageResponse])
+            case Left(message) => CoverageResponse("error", message, null)
+        }
+        if ("error".equals(resp.status)) throw new SodaClientException(resp.message)
+        else resp
+    }
+
+    def lookup(lexicon: String, id: String): LookupResponse = {
+        val lookupRequest = LookupRequest(lexicon, id)
+        val request = sttp.body(gson.toJson(lookupRequest))
+            .post(uri"$sodaUrlPrefix/lookup.json")
+        val response = request.send()
+        val resp = response.body match {
+            case Right(jsonBody) => gson.fromJson(jsonBody, classOf[LookupResponse])
+            case Left(message) => LookupResponse("error", message, null)
+        }
+        if ("error".equals(resp.status)) throw new SodaClientException(resp.message)
+        else resp
     }
 }

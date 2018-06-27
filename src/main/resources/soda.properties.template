@@ -1,9 +1,5 @@
-# Solr Query URL (called from SoDA on local Solr)
-SOLR_QUERY_URL=http://localhost:8983/solr/texttagger
-
-# Solr Update URL (called from SoDA to all Solr backends).
-# If you have replication setup on your Solr servers, just set the master
-# Solr server URL here. Otherwise, specify the list of Solr servers separated
-# by commas. Each URL has same format as SOLR_QUERY_URL.
-SOLR_INDEX_URL=http://localhost:8983/solr/texttagger
-
+# Parameters used to construct the query from SoDA to Solr.
+SOLR_HOST=localhost
+SOLR_PORT=8983
+SOLR_CTX=solr
+SOLR_INDEX=sodaindex

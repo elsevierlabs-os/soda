@@ -1,99 +1,109 @@
 package com.elsevier.soda
 
-import org.junit.Test
-import org.apache.commons.io.FileUtils
-import java.io.File
+import com.elsevier.soda.messages._
+import com.google.gson.Gson
+import org.junit.runners.MethodSorters
+import org.junit.{Assert, FixMethodOrder, Test}
+
 import scala.io.Source
 
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 class SodaServiceTest {
 
     val sodaService = new SodaService()
-    
-//    @Test
-    def testTagging(): Unit = {
-        val text = FileUtils.readFileToString(
-            new File("src/test/resources/sildenafil.txt"))
-        val tags = sodaService.tag(text, "mesh", true)
-        AnnotationHelper.prettyPrintSodaAnnotations(tags)
+    val gson = new Gson()
+
+    val lexiconName = "test_countries"
+    val lookupId = "http://test-countries.com/ABW"
+    val matchings = List("exact", "lower", "stop", "stem1", "stem2", "stem3")
+    val text = "Institute of Clean Coal Technology, East China University of Science and Technology, Shanghai 200237, China"
+
+    @Test
+    def test_001_checkStatus(): Unit = {
+        try {
+            val response = sodaService.checkStatus()
+            val indexResponse = gson.fromJson(response, classOf[IndexResponse])
+            Assert.assertEquals("ok", indexResponse.status)
+        } catch {
+            case e: Exception => Assert.fail("Exception thrown during checkStatus")
+        }
     }
 
     @Test
-    def testChunkTaggingSort(): Unit = {
-        val text = FileUtils.readFileToString(
-            new File("src/test/resources/sildenafil.txt"))
-        val tags = sodaService.chunkAndTag(text, "mesh", "tagname_srt")
-        AnnotationHelper.prettyPrintSodaAnnotations(tags)
-    }
-    
-//    @Test
-    def testChunkTaggingStem(): Unit = {
-        val text = FileUtils.readFileToString(
-            new File("src/test/resources/sildenafil.txt"))
-        val tags = sodaService.chunkAndTag(text, "mesh", "tagname_stm")
-        AnnotationHelper.prettyPrintSodaAnnotations(tags)
-    }
-    
-//    @Test
-    def testBatchTagging(): Unit = {
-        Source.fromFile("src/test/resources/example.csv")
-              .getLines
-              .map(line => line.split("\t")(2))
-              .map(text => (sodaService.tag(text, "mesh", true), text))
-              .foreach(results => 
-                   AnnotationHelper.prettyPrintSodaAnnotations(results._1))
+    def test_002_addEntry(): Unit = {
+        var numLoaded = 0
+        try {
+            Source.fromFile("src/main/resources/test-countries.tsv")
+                .getLines
+                .foreach(line => {
+                    val Array(id, syns) = line.split("\t")
+                    val names = syns.split("\\|").toArray
+                    val commit = numLoaded % 100 == 0
+                    val addRequest = AddRequest(lexiconName, id, names, commit)
+                    val response = sodaService.addEntry(gson.toJson(addRequest))
+                    val addResponse = gson.fromJson(response, classOf[AddResponse])
+                    Assert.assertEquals("ok", addResponse.status)
+                    numLoaded += 1
+                })
+            val finalCommit = AddRequest(lexiconName, null, null, true)
+            sodaService.addEntry(gson.toJson(finalCommit))
+        } catch {
+            case e: Exception => Assert.fail("Exception thrown during addEntry")
+        }
     }
 
-//    @Test
-    def testTaggingQuality(): Unit = {
-        val text = "Fracture energy versus volume fraction for the three particle sizes of silica nanoparticles in the epoxy polymers.Fig. 2"
-        val annotations = sodaService.tag(text, "wiki", false)
-        annotations.foreach(ann => AnnotationHelper.prettyPrintSodaAnnotation(ann))
-    }
-    
-//    @Test
-    def testPhraseMatches(): Unit = {
-        val phrase = "albert einstein"
-        val ids = sodaService.getPhraseMatches("wikidata", phrase, "stem")
-        Console.println("ids=" + ids)
-    }
-
-//    @Test
-    def testPhraseMatchesWithSort(): Unit = {
-        val phrase = "marie curie"
-        val ids = sodaService.getPhraseMatches("wikidata", phrase, "sort")
-        Console.println("ids=" + ids)
+    @Test
+    def test_003_listLexicons(): Unit = {
+        val response = sodaService.listLexicons()
+        val dictResponse = gson.fromJson(response, classOf[DictResponse])
+        Assert.assertEquals("ok", dictResponse.status)
+        Assert.assertEquals(1, dictResponse.lexicons
+            .filter(lexiconCount => lexiconCount.lexicon.equals(lexiconName))
+            .size)
+        Assert.assertEquals(248, dictResponse.lexicons
+            .filter(lexiconCount => lexiconCount.lexicon.equals(lexiconName))
+            .head.count)
     }
 
-//    @Test
-    def testRegexTagging1(): Unit = {
-       val patterns = Map(
-           "ZIPCODE" -> "\\d{5}(-\\d{4})?",
-           "GENE" -> "[A-Z][A-Z0-9_]+"
-       )
-       val texts = List(
-           "Mr Smith went to Washington.",
-           "Beverley Hills 90210 is a great show.",
-           "H1N1 can lead to death."
-       )
-       texts.foreach(text => {
-           Console.println(text)
-           val annots = sodaService.regex(text, patterns)
-           annots.foreach(a => Console.println("(%d, %d) [%s] %s"
-               .format(a.begin, a.end, a.namespace, a.props("covered"))))
-       })
+    @Test
+    def test_004_annotateText(): Unit = {
+        matchings.foreach(matching => {
+            val request = gson.toJson(AnnotRequest(lexiconName, text, matching))
+            val response = sodaService.annotateText(request)
+            val annotResponse = gson.fromJson(response, classOf[AnnotResponse])
+            Assert.assertEquals("ok", annotResponse.status)
+            Assert.assertTrue(annotResponse.annotations.size > 0)
+        })
     }
-    
-//    @Test
-    def testRegexTagging2(): Unit = {
-        val testDataDir = "/Users/palsujit/Elsevier/OA-STM-Corpus/SimpleText/SimpleText_auto"
-        val doiPattern = Map("DOI" -> "doi:10\\.\\d{4,}\\/[a-z0-9\\.]+" )
-        new File(testDataDir).listFiles
-            .map(file => {
-                Console.println("File: " + file.getName)
-                val text = Source.fromFile(file).getLines.mkString("\n")
-                val annots = sodaService.regex(text, doiPattern)
-                annots.foreach(a => Console.println("(%d, %d) [%s] %s"
-                    .format(a.begin, a.end, a.namespace, a.props("covered"))))
-            })
+
+    @Test
+    def test_005_computeCoverage(): Unit = {
+        matchings.foreach(matching => {
+            val request = gson.toJson(CoverageRequest(text, matching))
+            val response = sodaService.computeCoverage(request)
+            val coverageResponse = gson.fromJson(response, classOf[CoverageResponse])
+            Assert.assertEquals("ok", coverageResponse.status)
+            Assert.assertEquals(1, coverageResponse.lexicons
+                .filter(coverageCount => coverageCount.lexicon.equals(lexiconName))
+                .size)
+        })
+    }
+
+    @Test
+    def test_006_lookupLexicon(): Unit = {
+        val response = sodaService.lookupLexiconEntry(gson.toJson(LookupRequest(lexiconName, lookupId)))
+        val lookupResponse = gson.fromJson(response, classOf[LookupResponse])
+        Assert.assertEquals("ok", lookupResponse.status)
+        Assert.assertEquals(1, lookupResponse.entries.size)
+    }
+
+    @Test
+    def test_007_deleteEntryOrLexicon(): Unit = {
+        val responseOne = sodaService.deleteEntryOrLexicon(gson.toJson(DeleteRequest(lexiconName, lookupId)))
+        val deleteResponseOne = gson.fromJson(responseOne, classOf[DeleteResponse])
+        Assert.assertEquals("ok", deleteResponseOne.status)
+        val response = sodaService.deleteEntryOrLexicon(gson.toJson(DeleteRequest(lexiconName, "*")))
+        val deleteResponse = gson.fromJson(response, classOf[DeleteResponse])
+        Assert.assertEquals("ok", deleteResponse.status)
     }
 }

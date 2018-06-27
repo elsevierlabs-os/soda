@@ -1,16 +1,10 @@
 package com.elsevier.soda
 
 import java.io.InputStream
-import scala.collection.JavaConversions._
+
 import scala.io.Source
 import org.apache.commons.io.IOUtils
-import com.fasterxml.jackson.databind.ObjectMapper
-import java.util.ArrayList
-import org.apache.commons.lang3.text.translate.LookupTranslator
-import java.util.regex.Pattern
-import scala.util.parsing.json.JSON
-import scala.util.parsing.json.JSONObject
-import scala.util.parsing.json.JSONArray
+import org.apache.commons.text.similarity.LevenshteinDistance
 
 object SodaUtils extends java.io.Serializable {
     
@@ -32,53 +26,44 @@ object SodaUtils extends java.io.Serializable {
             IOUtils.closeQuietly(istream)
         }
     }
-    
-    def stopwords(): Set[String] = {
-        var istream: InputStream = null
-        try {
-            istream = getClass.getClassLoader
-                              .getResourceAsStream("stopwords.txt")
-            Source.fromInputStream(istream)
-                  .getLines()
-                  .toSet
-        } finally {
-            IOUtils.closeQuietly(istream)
+
+    // adapted from: https://stackoverflow.com/questions/955110/similarity-string-comparison-in-java
+    def similarity(s1: String, s2: String): Double = {
+        val lsPair = if (s1.length < s2.length) (s2, s1) else (s1, s2)
+        val longerLength = lsPair._1.length.toDouble
+        if (longerLength == 0) return 1.0D
+        else {
+            val metric = new LevenshteinDistance()
+            val editDistance = metric.apply(lsPair._1, lsPair._2)
+            (longerLength - editDistance) / longerLength
         }
     }
-    
+
+    def computeConfidence(coveredText: String, id: String, id2names: Map[String,List[String]],
+                          matchType: String): Double = {
+        if ("exact".equals(matchType))
+            // if exact match, it must have matched one of the syns by definition,
+            // so no need to actually compute the best value
+            1.0D
+        else {
+            // all matchType != "exact" are lowercased before matching
+            // other stemming and stopwording transformations take place inside index
+            // but all of them require a lower case input
+            val sims = id2names(id).map(name => {
+                val sim = similarity(coveredText.toLowerCase, name.toLowerCase)
+                (name, sim)
+            })
+            sims.sortWith((a, b) => a._2 > b._2)
+                .head
+                ._2
+        }
+    }
+
     lazy val luceneReservedChars = """+-&|!(){}[]^"~*?:\"""
         .toCharArray.toSet
 
     def escapeLucene(query: String): String = {
-        query.toCharArray.map(c => 
-            if (luceneReservedChars.contains(c)) "\\" + c
-            else c).mkString
+        query.toCharArray.map(c => if (luceneReservedChars.contains(c)) "\\" + c else c)
+            .mkString
     }
-    
-    val AbbrevPattern = Pattern.compile("[A-Z0-9\\p{Punct}]+")
-    def isAbbreviation(s: String): Boolean = {
-        val m = AbbrevPattern.matcher(s)
-        m != null && m.matches()
-    }
-    
-    def isStopword(s: String, stopwords: Set[String]): Boolean =
-        stopwords.contains(s.toLowerCase())
-    
-    def isTooShort(s: String): Boolean = {
-        if (s.isEmpty) true
-        else s.replaceAll("\\p{Punct}", "").length() < 3
-    }
-    
-    def stripEscapes(s: String): String = {
-        val ss = s.replaceAll("\\\\", "")
-        if (ss.startsWith("\"") && ss.endsWith("\"")) 
-            ss.substring(1, ss.length() - 1)
-        else ss
-    }
-        
-    def OK(): String = """{"status": "ok"}"""
-        
-    def error(message: String): String = 
-        """{"status": "error", "message": "%s"}""".format(message)
-
 }
