@@ -1,6 +1,9 @@
 bin
 data
 target
+project
 .classpath
 .project
 .cache
+**/__pycache__
+**/*.properties
