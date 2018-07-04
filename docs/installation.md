@@ -16,12 +16,9 @@
 - [Loading a Dictionary](#loading-a-dictionary)
 - [Running SoDA local tests](#running-soda-local-tests)
 
-
-_(generated with [DocToc](http://doctoc.herokuapp.com/))_
-
+----
 
 This document lists out the steps needed to setup a SoDA server in the AWS cloud and visible to your Databricks cluster.
-
 
 ### Hardware and OS
 
@@ -43,6 +40,7 @@ Additional hardware will be provided as an EBS volume. Follow instructions on th
     $ ln -s /mnt/ebs .
     $ cd ebs
 
+----
 
 ### Databricks Environment
 
@@ -50,6 +48,7 @@ _**This is optional, if you use Databricks notebooks to access SoDA for annotati
 
 The server needs to be accessible from within the Databricks notebook environment, so it is required to have a "private" IP address that is visible to the Databricks cluster. In addition, for maintenance work on the server, it has a "public" IP address into which one can ssh in with a PEM file.
 
+----
 
 ### Software Installation
 
@@ -167,6 +166,7 @@ We only describe the command to deploy to the Jetty container, but the command t
 
 You should be able to hit the SoDA index page at http://public\_ip:8080/soda/index.json, and it should return a JSON response saying "status": "ok" and the Solr version being used in the backend.
 
+----
 
 ### Loading a Dictionary
 
@@ -183,6 +183,7 @@ The file must have the following format:
 
 The id field has to be unique across lexicons. It is recommended that the id value be structured as a URI that incorporates the lexicon name in it.
 
+----
 
 ### Running SoDA local tests
 
