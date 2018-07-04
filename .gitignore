@@ -7,3 +7,4 @@ project
 .cache
 **/__pycache__
 **/*.properties
+**/.*.swp

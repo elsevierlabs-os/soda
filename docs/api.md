@@ -31,8 +31,8 @@ __OUTPUT__
 
 ````json
     {
-        status: "ok",
-        message: "SoDA accepting requests (Solr version 7.3.1)"
+        "status": "ok",
+        "message": "SoDA accepting requests (Solr version 7.3.1)"
     }
 ````
 
@@ -70,7 +70,7 @@ __INPUT__
         "lexicon" : "lexicon_name", 
         "id" : "unique_url_of_entry",
         "names" : ["name_1", "name_2", "name_3"],
-        "commit" : true_or_false
+        "commit" : true
     }
 ````
 
@@ -78,7 +78,7 @@ The id value we have chosen to use is the RDF URI of the entity as reported in t
 
 ````json
     {
-        "lexicon" : "lexicon_name", 
+        "lexicon" : "countries", 
         "commit" : true
     }
 ````
@@ -89,10 +89,10 @@ __OUTPUT__
     {
         "status": "ok",
         "payload": {
-            "lexicon" : "lexicon_name", 
-            "id" : "unique_url_of_entry",
-            "names" : ["name_1", "name_2", "name_3"],
-            "commit" : true_or_false
+            "lexicon" : "countries", 
+            "id" : "http://www.geonames.org/CHN",
+            "names" : ["China", "Chine", "CHN"],
+            "commit" : true
         }
     }
 ````
@@ -128,8 +128,8 @@ __INPUT__
 
 ````json
     { 
-        "lexicon" : "lexicon_name",
-        "id": "optional_id"
+        "lexicon" : "countries",
+        "id": "http://www.geonames.org/CHN"
     }
 ````
 
@@ -139,8 +139,8 @@ __OUTPUT__
     {
         "status": "ok",
         "payload": {
-            "lexicon" : "lexicon_name",
-            "id": "optional_id"
+            "lexicon" : "countries",
+            "id": "http://www.geonames.org/CHN"
         }
     }
 ````
@@ -252,7 +252,7 @@ __OUTPUT__
         "lexicons": [
             {
                 "lexicon": "countries",
-                "count": 1234
+                "count": 2
             }
         ]
     }
