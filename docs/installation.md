@@ -179,7 +179,7 @@ Where the lexicon\_name is the name of the dictionary the entries are to be load
 
 The file must have the following format:
 
-    id \t primary-name|alt-name-1|alt-name-2|...|alt-name-n
+    id {TAB} primary-name|alt-name-1|alt-name-2|...|alt-name-n
 
 The id field has to be unique across lexicons. It is recommended that the id value be structured as a URI that incorporates the lexicon name in it.
 
