@@ -1,4 +1,4 @@
-## Changes in this version
+## Changes in this release
 
 ### Software version changes
 
