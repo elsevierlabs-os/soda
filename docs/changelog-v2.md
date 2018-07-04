@@ -15,6 +15,7 @@
 * General cleanup, removing unnecessary libraries, standardizing JSON parsing and generation using Google's GSON library, and standardizing HTTP access using the new Scala sttp library.
 * Addition of an importable Python client sodaclient that mimics the API for the existing Scala client SodaClient.
 * Addition of a generic (single-threaded) dictionary loader.
+* Installation is now considerably simplified, using the new Solr JSON API.
 
 ### Other changes
 

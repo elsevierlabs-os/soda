@@ -24,7 +24,7 @@ _Fig 1: SoDA architecture_
 
 ### More Information
 
-* [Changes in this version](docs/changelog-v2.md)
+* [Changes in this release](docs/changelog-v2.md)
 * [SoDA Installation and Configuration](docs/installation.md)
 * [SoDA Application Programming Interface (API)](docs/api.md) 
 
