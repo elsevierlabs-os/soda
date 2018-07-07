@@ -93,6 +93,7 @@ class Worker(id: Int, lexiconName: String) extends Actor {
     override def receive = {
         case m: IndexMsg => {
             addEntry(m.line, numLinesProcessed)
+            numLinesProcessed += 1
             sender() ! IndexRspMsg(0)
         }
         case StopMsg => {

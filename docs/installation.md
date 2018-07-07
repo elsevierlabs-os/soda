@@ -173,9 +173,9 @@ You should be able to hit the SoDA index page at http://public\_ip:8080/soda/ind
 You can load a dictionary from a formatted tab-separated file using the SodaBulkLoader class provided with SoDA. Currently there is only a single main class, so SBT will not prompt for the class name to run. If prompted, choose the SodaBulkLoader class to run.
 
     $ sbt
-    sbt> run ${lexicon_name} ${path_to_input_file}
+    sbt> run ${lexicon_name} ${path_to_input_file} number_of_workers
 
-Where the lexicon\_name is the name of the dictionary the entries are to be loaded into, and the path\_to\_input\_file represents the full path to the tab-separated data file.
+Where the lexicon\_name is the name of the dictionary the entries are to be loaded into, and the path\_to\_input\_file represents the full path to the tab-separated data file. The number\_of\_workers value should be equal or less than the number of CPUs on the SoDA/Solr box.
 
 The file must have the following format:
 
