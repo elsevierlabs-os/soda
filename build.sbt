@@ -16,11 +16,13 @@ libraryDependencies ++= Seq(
     // json
     "com.google.code.gson" % "gson" % "2.8.5",
     "commons-io" % "commons-io" % "2.4",
-    // distance metric
-    "org.apache.commons" % "commons-text" % "1.4",
+    // multithreading
+    "com.typesafe.akka" %% "akka-actor" % "2.5.13",
     // http
     "com.softwaremill.sttp" %% "core" % "1.2.0-RC6",
     "com.softwaremill.sttp" %% "json4s" % "1.2.0-RC6",
+    // distance metric
+    "org.apache.commons" % "commons-text" % "1.4",
     // solr
     "org.apache.solr" % "solr-solrj" % "7.3.1",
     // logging

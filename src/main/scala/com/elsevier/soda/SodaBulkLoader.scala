@@ -1,47 +1,117 @@
 package com.elsevier.soda
 
+import akka.actor.{Actor, ActorSystem, Props}
 import com.elsevier.soda.messages.AddRequest
 import com.google.gson.Gson
 import org.slf4j.LoggerFactory
 
 import scala.io.Source
 
+
 object SodaBulkLoader extends App {
 
-    if (args.size != 2) {
+    if (args.size != 3) {
         val className = getClass.getName.replace("$", "")
-        Console.println("Usage: %s lexicon_name /path/to/input_file".format(className))
+        Console.println("Usage: %s lexicon_name /path/to/input_file num_workers".format(className))
         System.exit(0)
     }
     val lexiconName = args(0)
     val inputPath = args(1)
+    val numWorkers = args(2).toInt
 
-    val loader = new SodaBulkLoader(lexiconName, inputPath)
-    loader.load()
+    val loader = new SodaBulkLoader(lexiconName, inputPath, numWorkers)
+
 }
 
-class SodaBulkLoader(lexiconName: String, inputPath: String) {
+class SodaBulkLoader(lexiconName: String, inputPath: String, numWorkers: Int) {
+
+    val system = ActorSystem("SodaBulkLoader")
+    val master = system.actorOf(Props(new Master(lexiconName, inputPath, numWorkers)), name="master")
+    master ! StartMsg
+
+}
+
+sealed trait BulkLoadMessage
+case class StartMsg() extends BulkLoadMessage
+case class IndexMsg(line: String) extends BulkLoadMessage
+case class IndexRspMsg(status: Int) extends BulkLoadMessage
+case class StopMsg() extends BulkLoadMessage
+
+class Master(lexiconName: String, inputPath: String, numWorkers: Int) extends Actor {
 
     val logger = LoggerFactory.getLogger(classOf[SodaBulkLoader])
+
+    // create a set of workers
+    val workers = List.tabulate(numWorkers)(i => {
+        context.actorOf(Props(new Worker(i, lexiconName)), name="worker_%d".format(i))
+    })
+    workers.foreach(context.watch(_))
+
+    var numReqsSent = 0
+    var numRespsRecd = 0
+    var numSuccesses = 0
+    var numFailures = 0
+    var numWorkersTerminated = 0
+
+    def receive = {
+        case StartMsg => {
+            Source.fromFile(inputPath)
+                .getLines
+                .zipWithIndex
+                .foreach(lineIdx => {
+                    val line = lineIdx._1
+                    val idx = lineIdx._2
+                    val workerId = idx % numWorkers
+                    workers(workerId) ! IndexMsg(line)
+                    numReqsSent += 1
+                })
+            workers.foreach(worker => worker ! StopMsg)
+        }
+        case m: IndexRspMsg => {
+            if (m.status == 0) numSuccesses += 1 else numFailures += 1
+            numRespsRecd = numSuccesses + numFailures
+            if (numRespsRecd % 100 == 0) logger.info("(%d/%d) records processed".format(numRespsRecd, numReqsSent))
+        }
+        case StopMsg => {
+            numWorkersTerminated += 1
+            if (numWorkersTerminated >= numWorkers) {
+                logger.info("(%d/%d) records processed, COMPLETE".format(numRespsRecd, numReqsSent))
+                context.stop(self)
+                context.system.terminate
+            }
+        }
+    }
+}
+
+class Worker(id: Int, lexiconName: String) extends Actor {
 
     val sodaService = new SodaService()
     val gson = new Gson()
 
-    def load(): Unit = {
-        var numLines = 0
-        Source.fromFile(inputPath)
-            .getLines
-            .foreach(line => {
-                val Array(id, syns) = line.split("\t")
-                val names = syns.split("\\|").toArray
-                val commit = if (numLines % 100 == 0) true else false
-                if (commit) logger.info("Loaded %d records for lexicon %s".format(numLines, lexiconName))
-                val addRequest = AddRequest(lexiconName, id, names, commit)
-                sodaService.addEntry(gson.toJson(addRequest))
-                numLines += 1
-            })
-        val finalCommit = AddRequest(lexiconName, null, null, true)
-        sodaService.addEntry(gson.toJson(finalCommit))
-        logger.info("Loading %d records for lexicon %s, COMPLETE".format(numLines, lexiconName))
+    var numLinesProcessed = 0
+
+    override def receive = {
+        case m: IndexMsg => {
+            addEntry(m.line, numLinesProcessed)
+            sender() ! IndexRspMsg(0)
+        }
+        case StopMsg => {
+            commitEntries()
+            context.stop(self)
+            sender() ! StopMsg
+        }
+    }
+
+    def addEntry(line: String, numLinesProcessed: Int): Unit = {
+        val Array(id, syns) = line.split("\t")
+        val names = syns.split("\\|").toArray
+        val shouldCommit = (numLinesProcessed % 100 == 0)
+        val addRequest = AddRequest(lexiconName, id, names, shouldCommit)
+        sodaService.addEntry(gson.toJson(addRequest))
+    }
+
+    def commitEntries(): Unit = {
+        val commitRequest = AddRequest(lexiconName, null, null, true)
+        sodaService.addEntry(gson.toJson(commitRequest))
     }
 }

@@ -5,6 +5,7 @@ project
 .classpath
 .project
 .cache
+.idea/*
 **/__pycache__
 **/*.properties
 **/.*.swp
