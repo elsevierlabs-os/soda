@@ -28,6 +28,10 @@ _Fig 1: SoDA architecture_
 * [SoDA Installation and Configuration](docs/installation.md)
 * [SoDA Application Programming Interface (API)](docs/api.md) 
 
+### Presentations
+
+* [Dictionary Based Annotation at scale with Spark, SolrTextTagger and OpenNLP](https://www.slideshare.net/sujitpal/sseu-2015soda/sujitpal/sseu-2015soda) by Sujit Pal at Spark Summit Europe 2015.
+
 ### SoDA v1.0 links
 
 The following links describe SoDA v1, which used an older version of Solr (5.0.0) and SolrTextTagger (2.1-SNAPSHOT). The latest release of SoDA v1 can be retrieved using the tag "v1.1". The major difference between v1 and v2 is that the OpenNLP phrase based fuzzy matching has been replaced with multiple levels of stemmed matching, see [Issue#12](https://github.com/elsevierlabs-os/soda/issues/12) for the discussion. Regrettably, I don't have the bandwidth to support v1, please consider moving to the latest version.

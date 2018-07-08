@@ -67,9 +67,9 @@ __INPUT__
 
 ````json
     {
-        "lexicon" : "lexicon_name", 
-        "id" : "unique_url_of_entry",
-        "names" : ["name_1", "name_2", "name_3"],
+        "lexicon" : "countries", 
+        "id" : "http://www.geonames.org/CHN",
+        "names" : ["China", "Chine", "CHN"],
         "commit" : true
     }
 ````
@@ -252,7 +252,7 @@ __OUTPUT__
         "lexicons": [
             {
                 "lexicon": "countries",
-                "count": 2
+                "count": 248
             }
         ]
     }
@@ -300,8 +300,10 @@ __OUTPUT__
     {
         "status": "ok",
         "lexicons": [
-            "lexicon": "countries",
-            "count": 2
+            {
+                "lexicon": "countries",
+                "count": 2
+            }
         ]
     }
 ````
