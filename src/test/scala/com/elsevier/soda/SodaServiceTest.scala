@@ -18,7 +18,7 @@ class SodaServiceTest {
     val matchings = List("exact", "lower", "stop", "stem1", "stem2", "stem3")
     val text = "Institute of Clean Coal Technology, East China University of Science and Technology, Shanghai 200237, China"
     val phrase = "Emirates"
-    val phraseMatchings = matchings ++ List("esort", "s3sort")
+    val phraseMatchings = matchings ++ List("lsort", "s3sort")
 
     @Test
     def test_001_checkStatus(): Unit = {

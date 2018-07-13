@@ -250,7 +250,7 @@ curl -X POST -H 'Content-type:application/json'  http://localhost:8983/solr/soda
     }
    },
   "add-field-type":{
-    "name" : "phr_esort",
+    "name" : "phr_lsort",
     "class" : "solr.TextField",
     "analyzer" : {
       "tokenizer" : {
@@ -289,6 +289,6 @@ curl -X POST -H 'Content-type:application/json'  http://localhost:8983/solr/soda
   "add-field" : { "name" : "phrname_stem1",  "type" : "phr_stem1",  "stored" : false, "multiValued" : true },
   "add-field" : { "name" : "phrname_stem2",  "type" : "phr_stem2",  "stored" : false, "multiValued" : true },
   "add-field" : { "name" : "phrname_stem3",  "type" : "phr_stem3",  "stored" : false, "multiValued" : true },
-  "add-field" : { "name" : "phrname_esort",  "type" : "phr_esort",  "stored" : false, "multiValued" : true },
+  "add-field" : { "name" : "phrname_lsort",  "type" : "phr_lsort",  "stored" : false, "multiValued" : true },
   "add-field" : { "name" : "phrname_s3sort", "type" : "phr_s3sort", "stored" : false, "multiValued" : true }
 }'

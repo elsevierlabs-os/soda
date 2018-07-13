@@ -11,6 +11,7 @@ This document describes the SoDA API. The SoDA API uses JSON over HTTP and is th
 - [List Lexicons](#list-lexicons)
 - [Coverage Info](#coverage-info)
 - [Lookup Dictionary Entry](#lookup-dictionary-entry)
+- [Reverse Lookup Phrase against Dictionary](#reverse-lookup-phrase-against-dictionary)
 
 ----
 
@@ -374,6 +375,66 @@ __EXAMPLE_SCALA_CLIENT__
 
     val client = new SodaClient("http://host:port/soda")
     val resp: LookupResponse = client.lookup(lexicon, id)
+````
+
+----
+
+### Reverse Lookup Phrase against Dictionary
+
+This service allows non-streaming matching of phrases against entries in the dictionary. It allows all the matching types allowed by the annot service. In addition, it allows sorted matching against a lowercased and Porter stemmed version of dictionary entries (lsort and s3sort respectively). Full list of matching modes are listed below.
+
+* __exact__ - case-sensitive partial or full match of phrase against dictionary.
+* __lower__ - same as exact, but matches are now case insensitive.
+* __stop__ - same as lower, but with standard English stopwords removed.
+* __stem1__ - same as stop, but with the Solr Minimal English stemmer applied.
+* __stem2__ - same as stop, but with the KStem stemmer applied.
+* __stem3__ - same as stop, but with the Porter stemmer applied.
+* __lsort__ - same as lower, but with tokens in phrase sorted alphabetically.
+* __s3sort__ - same as stem3, but with tokens in phrase sorted alphabetically.
+
+__URL__ http://host:port/rlookup.json
+
+__INPUT__
+````json
+    {
+        "lexicon" : "countries",
+        "phrase": "emirates",
+        "matching": "lower"
+    }
+````
+
+__OUTPUT__
+````json
+    {
+        "status": "ok",
+        "entries": [
+            {
+                "id": "http://test-countries.com/ARE",
+                "lexicon": "countries",
+                "text": "United Arab Emirates",
+                "confidence": 0.4
+            }
+        ]
+    }
+````
+
+__EXAMPLE_PYTHON_CLIENT__
+
+````python
+    import sodaclient
+
+    client = sodaclient.SodaClient("http://host:port/soda")
+    resp = client.rlookup(lexicon, "emirates", "lower")
+````
+
+__EXAMPLE_SCALA_CLIENT__
+
+````scala
+    import com.elsevier.soda.messages._
+    import com.elsevier.soda.SodaClient
+
+    val client = new SodaClient("http://host:port/soda")
+    val resp: ReverseLookupResponse = client.lookup(lexicon, "emirates", "lower")
 ````
 
 ----

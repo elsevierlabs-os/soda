@@ -10,7 +10,7 @@ LOOKUP_ID = "http://test-countries-3.com/ABW"
 TEXT = "Institute of Clean Coal Technology, East China University of Science and Technology, Shanghai 200237, China"
 
 PHRASE = "Emirates"
-PHRASE_MATCHINGS = ["esort", "s3sort"]
+PHRASE_MATCHINGS = ["lsort", "s3sort"]
 PHRASE_MATCHINGS.extend(MATCHINGS)
 
 class SodaClientTest(unittest.TestCase):

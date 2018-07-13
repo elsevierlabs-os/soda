@@ -118,7 +118,7 @@ class SodaService {
                     idoc.addField("phrname_stem2", name)
                     idoc.addField("phrname_stem3", name)
                     val sortedName = SodaUtils.sortWords(name)
-                    idoc.addField("phrname_esort", sortedName)
+                    idoc.addField("phrname_lsort", sortedName)
                     idoc.addField("phrname_s3sort", sortedName)
                 })
                 solrUpdaterClients.foreach(client => {
@@ -315,7 +315,7 @@ class SodaService {
             gson.toJson(ReverseLookupResponse("error", "phrase must be specified", null))
         } else {
             val params = new ModifiableSolrParams()
-            if (reverseLookupRequest.matching.equals("esort") ||
+            if (reverseLookupRequest.matching.equals("lsort") ||
                     reverseLookupRequest.matching.equals("s3sort")) {
                 val sortedPhrase = SodaUtils.sortWords(reverseLookupRequest.phrase)
                 params.add(CommonParams.Q, """phrname_%s:"%s"""".format(
