@@ -15,6 +15,8 @@ class SodaClientTest {
     val lookupId = "http://test-countries-2.com/ABW"
     val matchings = List("exact", "lower", "stop", "stem1", "stem2", "stem3")
     val text = "Institute of Clean Coal Technology, East China University of Science and Technology, Shanghai 200237, China"
+    val phrase = "Emirates"
+    val phraseMatchings = matchings ++ List("esort", "s3sort")
 
     @Test
     def test_001_index(): Unit = {
@@ -73,7 +75,16 @@ class SodaClientTest {
     }
 
     @Test
-    def test_007_delete(): Unit = {
+    def test_007_reverseLookup(): Unit = {
+        phraseMatchings.foreach(matching => {
+            val reverseLookupResponse = sodaClient.rlookup(lexiconName, phrase, matching)
+            Assert.assertEquals("ok", reverseLookupResponse.status)
+            Assert.assertEquals(1, reverseLookupResponse.entries.size)
+        })
+    }
+
+    @Test
+    def test_008_delete(): Unit = {
         val deleteResponseOne = sodaClient.delete(lexiconName, lookupId)
         Assert.assertEquals("ok", deleteResponseOne.status)
         val deleteResponse = sodaClient.delete(lexiconName, "*")

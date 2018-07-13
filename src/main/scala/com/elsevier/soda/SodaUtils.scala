@@ -49,14 +49,23 @@ object SodaUtils extends java.io.Serializable {
             // all matchType != "exact" are lowercased before matching
             // other stemming and stopwording transformations take place inside index
             // but all of them require a lower case input
-            val sims = id2names(id).map(name => {
-                val sim = similarity(coveredText.toLowerCase, name.toLowerCase)
-                (name, sim)
-            })
-            sims.sortWith((a, b) => a._2 > b._2)
-                .head
-                ._2
+            computeBestMatchAndConfidence(coveredText, id2names(id).toArray)._2
         }
+    }
+
+    def computeBestMatchAndConfidence(phrase: String, names: Array[String]): (String, Double) = {
+        val sims = names.map(name => {
+            val sim = similarity(phrase.toLowerCase, name.toLowerCase)
+            (name, sim)
+        })
+        sims.sortWith((a, b) => a._2 > b._2).head
+    }
+
+    def sortWords(phrase: String): String = {
+        phrase.split(" ")
+            .sortWith(_ < _)
+            .foldLeft("")(_ + " " + _)
+            .trim
     }
 
     lazy val luceneReservedChars = """+-&|!(){}[]^"~*?:\"""

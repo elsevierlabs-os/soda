@@ -4,9 +4,14 @@ import sodaclient
 
 SODA_URL = "http://localhost:8080"
 LEXICON_NAME = "test_countries-3"
+
 MATCHINGS = ["exact", "lower", "stop", "stem1", "stem2", "stem3"]
 LOOKUP_ID = "http://test-countries-3.com/ABW"
 TEXT = "Institute of Clean Coal Technology, East China University of Science and Technology, Shanghai 200237, China"
+
+PHRASE = "Emirates"
+PHRASE_MATCHINGS = ["esort", "s3sort"]
+PHRASE_MATCHINGS.extend(MATCHINGS)
 
 class SodaClientTest(unittest.TestCase):
     
@@ -58,8 +63,15 @@ class SodaClientTest(unittest.TestCase):
         self.assertEquals("ok", lookup_resp["status"])
         self.assertEquals(1, len(lookup_resp["entries"]))
 
-    
-    def test_007_delete(self):
+
+    def test_007_rlookup(self):
+        soda_client = sodaclient.SodaClient(SODA_URL)
+        for matching in PHRASE_MATCHINGS:
+            rlookup_resp = soda_client.rlookup(LEXICON_NAME, PHRASE, matching)
+            self.assertEquals("ok", rlookup_resp["status"])
+
+
+    def test_008_delete(self):
         soda_client = sodaclient.SodaClient(SODA_URL)
         delete_resp_single = soda_client.delete(LEXICON_NAME, LOOKUP_ID)
         self.assertEquals("ok", delete_resp_single["status"])

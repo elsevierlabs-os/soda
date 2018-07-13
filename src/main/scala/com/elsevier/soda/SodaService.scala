@@ -103,12 +103,23 @@ class SodaService {
                 idoc.addField("lexicon", addRequest.lexicon)
                 addRequest.names.foreach(name => {
                     idoc.addField("tagname_str", name)
+                    // for tagging match (streaming)
                     idoc.addField("tagname_exact", name)
                     idoc.addField("tagname_lower", name)
                     idoc.addField("tagname_stop", name)
                     idoc.addField("tagname_stem1", name)
                     idoc.addField("tagname_stem2", name)
                     idoc.addField("tagname_stem3", name)
+                    // for phrase match (non-streaming)
+                    idoc.addField("phrname_exact", name)
+                    idoc.addField("phrname_lower", name)
+                    idoc.addField("phrname_stop", name)
+                    idoc.addField("phrname_stem1", name)
+                    idoc.addField("phrname_stem2", name)
+                    idoc.addField("phrname_stem3", name)
+                    val sortedName = SodaUtils.sortWords(name)
+                    idoc.addField("phrname_esort", sortedName)
+                    idoc.addField("phrname_s3sort", sortedName)
                 })
                 solrUpdaterClients.foreach(client => {
                     try {
@@ -293,6 +304,46 @@ class SodaService {
             }).toArray
             gson.toJson(LookupResponse("ok", null, lookupEntries))
         }
+    }
+
+    def reverseLookupPhrase(request: String): String = {
+        val gson = new Gson()
+        val reverseLookupRequest = gson.fromJson(request, classOf[ReverseLookupRequest])
+        if (reverseLookupRequest.lexicon == null) {
+            gson.toJson(ReverseLookupResponse("error", "lexicon must be specified", null))
+        } else if (reverseLookupRequest.phrase == null) {
+            gson.toJson(ReverseLookupResponse("error", "phrase must be specified", null))
+        } else {
+            val params = new ModifiableSolrParams()
+            if (reverseLookupRequest.matching.equals("esort") ||
+                    reverseLookupRequest.matching.equals("s3sort")) {
+                val sortedPhrase = SodaUtils.sortWords(reverseLookupRequest.phrase)
+                params.add(CommonParams.Q, """phrname_%s:"%s"""".format(
+                    reverseLookupRequest.matching,
+                    SodaUtils.escapeLucene(sortedPhrase)))
+            } else {
+                params.add(CommonParams.Q, """phrname_%s:"%s"""".format(
+                    reverseLookupRequest matching,
+                    SodaUtils.escapeLucene(reverseLookupRequest.phrase)))
+            }
+            params.add(CommonParams.FQ, "lexicon:%s".format(reverseLookupRequest.lexicon))
+            params.add(CommonParams.FL, "id,tagname_str")
+            params.add(CommonParams.ROWS, "10")
+            val resp = solrQueryClient.query(params)
+            val results = asScalaBuffer(resp.getResults()).toList
+            val entries = results.map(doc => {
+                val id = doc.getFieldValue("id").asInstanceOf[String]
+                val names = asScalaBuffer(doc.getFieldValues("tagname_str")
+                    .asInstanceOf[java.util.List[String]])
+                    .toArray
+                val bestMatchAndConfidence = SodaUtils.computeBestMatchAndConfidence(
+                    reverseLookupRequest.phrase, names)
+                ReverseLookupEntry(id, reverseLookupRequest.lexicon, bestMatchAndConfidence._1,
+                    bestMatchAndConfidence._2)
+            })
+            gson.toJson(ReverseLookupResponse("ok", null, entries.toArray))
+        }
+
     }
 }
 

@@ -71,3 +71,14 @@ class SodaClient(object):
         resp = requests.post(self.url + "/lookup.json", data=body)
         lookup_resp = json.loads(resp.text)
         return lookup_resp
+
+
+    def rlookup(self, lexicon, phrase, matching):
+        body = json.dumps({
+            "lexicon": lexicon,
+            "phrase": phrase,
+            "matching": matching
+        })
+        resp = requests.post(self.url + "/rlookup.json", data=body)
+        lookup_resp = json.loads(resp.text)
+        return lookup_resp

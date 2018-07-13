@@ -17,6 +17,8 @@ class SodaServiceTest {
     val lookupId = "http://test-countries.com/ABW"
     val matchings = List("exact", "lower", "stop", "stem1", "stem2", "stem3")
     val text = "Institute of Clean Coal Technology, East China University of Science and Technology, Shanghai 200237, China"
+    val phrase = "Emirates"
+    val phraseMatchings = matchings ++ List("esort", "s3sort")
 
     @Test
     def test_001_checkStatus(): Unit = {
@@ -98,7 +100,18 @@ class SodaServiceTest {
     }
 
     @Test
-    def test_007_deleteEntryOrLexicon(): Unit = {
+    def test_007_reverseLookupLexicon(): Unit = {
+        phraseMatchings.foreach(matching => {
+            val request = gson.toJson(ReverseLookupRequest(lexiconName, phrase, matching))
+            val response = sodaService.reverseLookupPhrase(request)
+            val reverseLookupResponse = gson.fromJson(response, classOf[ReverseLookupResponse])
+            Assert.assertEquals("ok", reverseLookupResponse.status)
+            Assert.assertEquals(1, reverseLookupResponse.entries.size)
+        })
+    }
+
+    @Test
+    def test_008_deleteEntryOrLexicon(): Unit = {
         val responseOne = sodaService.deleteEntryOrLexicon(gson.toJson(DeleteRequest(lexiconName, lookupId)))
         val deleteResponseOne = gson.fromJson(responseOne, classOf[DeleteResponse])
         Assert.assertEquals("ok", deleteResponseOne.status)

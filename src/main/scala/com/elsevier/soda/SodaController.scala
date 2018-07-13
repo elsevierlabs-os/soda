@@ -68,4 +68,13 @@ class SodaController @Autowired()(sodaService: SodaService) {
         model.addAttribute("response", sodaService.lookupLexiconEntry(request))
         "response_view"
     }
+
+    @RequestMapping(value = Array("/rlookup.json"), method = Array(RequestMethod.POST))
+    def rlookup(req: HttpServletRequest, res: HttpServletResponse, model: Model): String = {
+        val request = asScalaBuffer(IOUtils.readLines(req.getInputStream, "UTF-8"))
+            .toList
+            .mkString
+        model.addAttribute("response", sodaService.reverseLookupPhrase(request))
+        "response_view"
+    }
 }

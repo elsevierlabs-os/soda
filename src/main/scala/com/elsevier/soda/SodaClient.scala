@@ -103,4 +103,17 @@ class SodaClient(sodaUrl: String) extends java.io.Serializable {
         if ("error".equals(resp.status)) throw new SodaClientException(resp.message)
         else resp
     }
+
+    def rlookup(lexicon: String, phrase: String, matching: String): ReverseLookupResponse = {
+        val reverseLookupRequest = ReverseLookupRequest(lexicon, phrase, matching)
+        val request = sttp.body(gson.toJson(reverseLookupRequest))
+            .post(uri"$sodaUrlPrefix/rlookup.json")
+        val response = request.send()
+        val resp = response.body match {
+            case Right(jsonBody) => gson.fromJson(jsonBody, classOf[ReverseLookupResponse])
+            case Left(message) => ReverseLookupResponse("error", message, null)
+        }
+        if ("error".equals(resp.status)) throw new SodaClientException(resp.message)
+        else resp
+    }
 }
