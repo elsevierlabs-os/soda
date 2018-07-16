@@ -13,6 +13,7 @@ libraryDependencies ++= Seq(
     "org.springframework" % "spring-webmvc" % "5.0.7.RELEASE",
     "org.springframework" % "spring-context" % "5.0.7.RELEASE",
     "javax.servlet" % "javax.servlet-api" % "4.0.1" % "provided",
+    "javax.servlet" % "jstl" % "1.2",
     // json
     "com.google.code.gson" % "gson" % "2.8.5",
     "commons-io" % "commons-io" % "2.4",
