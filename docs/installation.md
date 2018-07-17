@@ -150,10 +150,22 @@ Restart Solr to allow the schema and configuration changes to take effect.
 
 #### Install web server container
 
-We can use either Apache Tomcat or Jetty as our web container.
+We can use either Apache Tomcat or Jetty as our web container. SoDA v.2 has been tested using Apache Tomcat 8.5.32 and Jetty 9.4.11.v20180605.
 
-    $ sudo apt-get install tomcat8
-    $ sudo apt-get install jetty9
+    $ sudo apt-get install tomcat8  # for tomcat
+    $ sudo apt-get install jetty9   # for jetty
+
+Generate the WAR file using `sbt package`, then copy the `target/scala-2.12/soda_2.12-2.0.war` to the container webapps directory as `soda.war`.
+
+    $ sbt package
+    $ cp target/scala-2.12/soda_2.12-2.0.war ${TOMCAT_HOME}/webapps/soda.war  # for tomcat
+    $ cp target/scala-2.12/soda_2.12-2.0.war ${JETTY_HOME}/webapps/soda.war  # for jetty
+
+Restart the container.
+
+    $ cd ${TOMCAT_HOME}; bin/shutdown.sh; bin/startup.sh  # for tomcat
+    $ cd ${JETTY_HOME}; bin/jetty.sh stop; bin/jetty.sh start  # for jetty
+
 
 #### Deploy SoDA WAR file
 
