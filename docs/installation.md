@@ -215,6 +215,11 @@ Bring up Solr if not already running.
     $ cd ${SOLR_HOME}
     $ bin/solr start
 
+If SoDA is running inside a Tomcat or Jetty container, shut that down. The unit tests are designed to run against an embedded version of Jetty, where the application context is different from that in an external Tomcat or Jetty container.
+
+    $ cd ${TOMCAT_HOME}; bin/shutdown.sh  # for Tomcat
+    $ cd ${JETTY_HOME}; bin/jetty.sh stop  # for Jetty
+
 Bring up SoDA in sbt using sbt's built-in Jetty server.
 
     $ cd ${SODA_HOME}
@@ -238,7 +243,6 @@ Finally, you can turn off the built-in Jetty server and exit sbt.
 
     sbt> jetty:stop
     sbt> exit
-    $ 
 
 Shut down Solr if not already shut down.
 
