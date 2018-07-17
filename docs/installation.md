@@ -202,16 +202,46 @@ If you prefer, there is also a script src/main/scripts/bulk\_load.sh which can b
     $ cd src/main/scripts
     $ ./bulk_load.sh lexicon_name /path/to/input_file.tsv num_workers
 
-The classpath is based on a working sbt setup, with paths to JAR files pointing to the underlying ivy2 cache. If you have a different repository structure for your JAR files, this may need customization for your use.
+__NOTE__: The classpath is based on a working sbt setup, with paths to JAR files pointing to the underlying ivy2 cache. If you have a different repository structure for your JAR files, this is very likely to need customization for your use.
 
 ----
 
 ### Running SoDA local tests
 
-Scala tests can be run using SBT and Python sodaclient tests can be run using nose.
+Scala tests can be run using SBT and Python sodaclient tests can be run using nose. Note that you need a running Solr instance and a SoDA instance for the tests to run successfully.
+
+Bring up Solr if not already running.
+
+    $ cd ${SOLR_HOME}
+    $ bin/solr start
+
+Bring up SoDA in sbt using sbt's built-in Jetty server.
 
     $ cd ${SODA_HOME}
-    $ sbt test
-    $ cd src/main/python
-    $ nosetests tests
+    $ sbt
+    sbt> jetty:start
+
+Run the Scala unit tests within sbt as follows (or on a different terminal using `sbt test`).
+
+    sbt> test
+
+Summary information about the number of tests being run and run successfully will be printed on the console. It is expected that all tests pass.
+
+Next on a different terminal, navigate to the `src/main/python` subdirectory.
+
+    $ cd ${SODA_HOME}/src/main/python
+    $ nosetests sodaclient_test.py
+
+Summary information about the number of tests being run and run successfully is printed on the console. As before, the expectation is that all tests pass.
+
+Finally, you can turn off the built-in Jetty server and exit sbt.
+
+    sbt> jetty:stop
+    sbt> exit
+    $ 
+
+Shut down Solr if not already shut down.
+
+    $ cd ${SOLR_HOME}
+    $ bin/solr stop
 
