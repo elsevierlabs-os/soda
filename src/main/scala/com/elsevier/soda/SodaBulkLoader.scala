@@ -19,8 +19,25 @@ object SodaBulkLoader extends App {
     val inputPath = args(1)
     val numWorkers = args(2).toInt
 
+    if (!validateFormat(inputPath)) {
+        Console.println("Input file is malformed, check format")
+        System.exit(0)
+    }
+
     val loader = new SodaBulkLoader(lexiconName, inputPath, numWorkers)
 
+    def validateFormat(inputPath: String): Boolean = {
+        val src = Source.fromFile(inputPath)
+        try {
+            val line = src.bufferedReader.readLine()
+            // verify that there are two columns tab separated
+            val hasValidColumnCount = (line.split("\t").size == 2)
+            val hasValidPipeSepCol = (line.split("\t")(1)).split("\\|").size >= 1
+            hasValidColumnCount && hasValidPipeSepCol
+        } finally {
+            src.close()
+        }
+    }
 }
 
 class SodaBulkLoader(lexiconName: String, inputPath: String, numWorkers: Int) {
@@ -55,17 +72,21 @@ class Master(lexiconName: String, inputPath: String, numWorkers: Int) extends Ac
 
     def receive = {
         case StartMsg => {
-            Source.fromFile(inputPath)
-                .getLines
-                .zipWithIndex
-                .foreach(lineIdx => {
-                    val line = lineIdx._1
-                    val idx = lineIdx._2
-                    val workerId = idx % numWorkers
-                    workers(workerId) ! IndexMsg(line)
-                    numReqsSent += 1
-                })
-            workers.foreach(worker => worker ! StopMsg)
+            val src = Source.fromFile(inputPath)
+            try {
+                 src.getLines
+                    .zipWithIndex
+                    .foreach(lineIdx => {
+                        val line = lineIdx._1
+                        val idx = lineIdx._2
+                        val workerId = idx % numWorkers
+                        workers(workerId) ! IndexMsg(line)
+                        numReqsSent += 1
+                    })
+                workers.foreach(worker => worker ! StopMsg)
+            } finally {
+                src.close()
+            }
         }
         case m: IndexRspMsg => {
             if (m.status == 0) numSuccesses += 1 else numFailures += 1
