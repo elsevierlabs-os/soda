@@ -22,7 +22,7 @@ This document lists out the steps needed to setup a SoDA server in the AWS cloud
 
 ### Hardware and OS
 
-The Hardware used for a single SoDA server box is a AWS EC2 r3.large instance (15.5GB RAM, 32 GB SSD, 2vCPU). In addition, we have an additional 25GB SSD disk to hold the index and software. We use Ubuntu Server 16.04, please make the necessary mental adjustments for other Linux flavors such as Amazon Linux.
+The Hardware used for a single SoDA server box is a AWS EC2 m5.xlarge instance (16 GB RAM, 60 GB SSD, 4vCPU). Optionally, you can also select a different class of machine that has similar RAM and CPU, and attach EBS storage as described in [Making an Amazon EBS Volume Available for Use](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-using-volumes.html). We use Ubuntu Server 16.04, please make the necessary mental adjustments for other Linux flavors such as Amazon Linux.
 
 The following ports need to be open on the server.
 
@@ -31,11 +31,14 @@ The following ports need to be open on the server.
 * port 8080 (soda)
 * port 8983 (solr)
 
-Additional hardware will be provided as an EBS volume. Follow instructions on the [Making an Amazon EBS Volume Available for Use](http://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-using-volumes.html) page to install and mount it as a filesystem on your server. Once the EBS volume is built, make the space available to the ec2-user like so:
+All software is installed under the home directory of user `ubuntu`. 
+
+_**Optional: if you used an EBS volume for your storage**_
+If you used an external EBS volume, you would link the mount point to a directory under the home directory and that would become your installation directory. For example:
 
     $ cd /mnt
     $ mkdir ebs
-    $ sudo chown -R ec2-user:ec2-user ebs
+    $ sudo chown -R ubuntu:ubuntu ebs
     $ cd
     $ ln -s /mnt/ebs .
     $ cd ebs
@@ -52,9 +55,9 @@ The server needs to be accessible from within the Databricks notebook environmen
 
 ### Software Installation
 
-We will need to log into the SoDA AWS box using its public IP (or private IP in case you use a VPC). You can log into the newly provisioned box as follows:
+We will need to SSH into the SoDA AWS box using its public IP (or private IP in case you use a VPC). You can log into the newly provisioned box as follows:
 
-    laptop$ ssh -i ~/.ssh/solr-databricks.pem ubuntu@public_ip
+    laptop$ ssh -i /path/to/your/pem/file ubuntu@public_or_private_ip
 
 #### Install Base Software
 
@@ -65,17 +68,28 @@ Install git, used to download various softwares (SoDA and SolrTextTagger) from g
     $ sudo apt-get update
     $ sudo apt-get install git-core
 
-Install the Oracle 8 JDK using these [instructions from DigitalOcean](https://www.digitalocean.com/community/tutorials/how-to-install-java-with-apt-get-on-ubuntu-16-04). The JDK provides the JVM which will run Solr as well as the webserver that SoDA will run inside of. In addition, the Scala compiler and runtime will also depend on the JDK.
+Install the Oracle 8 JDK. The JDK provides the JVM which will run Solr as well as the webserver that SoDA will run inside of. In addition, the Scala compiler and runtime will also depend on the JDK. Here are the sequence of commands you want to do this. More detailed [instructions from DigitalOcean](https://www.digitalocean.com/community/tutorials/how-to-install-java-with-apt-get-on-ubuntu-16-04) are available here. 
+
+    $ sudo add-apt-repository ppa:webupd8team/java
+    $ sudo apt-get update
+    $ sudo apt-get install oracle-java8-installer
+    $ sudo update-alternatives --config java  # select openjdk if not selected
+
+Finally, set the `JAVA\_HOME="/usr/lib/jvm/java-8-oracle"` in your ${HOME}/.profile file and source it.
 
 Install maven using the following commands. Maven will be used to build SolrTextTagger.
 
     $ sudo apt-get install maven
 
-Install Scala. The current version is 2.12.6, and will be used to compile the SoDA application.
+Install Scala. The current version is 2.12.6, and will be used to compile the SoDA application. [Detailed instructions](https://gist.github.com/Frozenfire92/3627e38dc47ca581d6d024c14c1cf4a9) here.
 
+    $ sudo apt-get remove scala-library scala
+    $ sudo wget http://scala-lang.org/files/archive/scala-2.12.1.deb
+    $ sudo dpkg -i scala-2.12.1.deb
+    $ sudo apt-get update
     $ sudo apt-get install scala
 
-Install SBT (Scala Build Tool). SBT is used to build the SoDA application.
+Install SBT (Scala Build Tool). SBT is used to build the SoDA application. [Detaild instructions](https://gist.github.com/Frozenfire92/3627e38dc47ca581d6d024c14c1cf4a9) from the same web page as for Scala.
 
     $ echo "deb https://dl.bintray.com/sbt/debian /" | sudo tee -a /etc/apt/sources.list.d/sbt.list
     $ sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 2EE0EA64E40A89B84B2DF73499E82A75642AC823
@@ -113,14 +127,15 @@ Build SoDA. The build artifacts can be found in the target/scala-2.12 folder. Th
 
 #### Install and Configure Solr 
 
-Install Apache Solr. The latest version at the time of release was Solr 7.3.0.
+Install Apache Solr. The latest version at the time of release was Solr 7.4.0.
 
-    $ curl -O http://apache.mirrors.pair.com/lucene/solr/7.3.0/solr-7.3.0.tgz
-    $ tar xvzf solr-7.3.0.tar.gz
-    $ cd solr-7.3.0
+    $ curl -O http://apache.mirrors.pair.com/lucene/solr/7.4.0/solr-7.4.0.tgz
+    $ tar xvzf solr-7.4.0.tar.gz
+    $ cd solr-7.4.0
 
 Install the SolrTextTagger SNAPSHOT JAR file into Solr's lib directory.
 
+    $ mkdir -p server/solr/lib
     $ cp ../SolrTextTagger/target/solr-text-tagger-2.6-SNAPSHOT.jar server/solr/lib
 
 Increase the Solr JVM heap size from the default to a more generous 4 GB.
@@ -152,12 +167,18 @@ Restart Solr to allow the schema and configuration changes to take effect.
 
 We can use either Apache Tomcat or Jetty as our web container. SoDA v.2 has been tested using Apache Tomcat 8.5.32 and Jetty 9.4.11.v20180605.
 
-    $ sudo apt-get install tomcat8  # for tomcat
-    $ sudo apt-get install jetty9   # for jetty
+To download and expand Tomcat, run these commands:
 
-Generate the WAR file using `sbt package`, then copy the `target/scala-2.12/soda_2.12-2.0.war` to the container webapps directory as `soda.war`.
+    $ wget http://download.nextag.com/apache/tomcat/tomcat-8/v8.5.32/bin/apache-tomcat-8.5.32.tar.gz
+    $ tar xvzf apache-tomcat-8.5.32.tar.gz
 
-    $ sbt package
+To download and expand Jetty, run these commands:
+
+    $ wget https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-distribution/9.4.11.v20180605/jetty-distribution-9.4.11.v20180605.tar.gz
+    $ tar xvzf jetty-distribution-9.4.11.v20180605.tar.gz
+
+Deploy the WAR file `target/scala-2.12/soda_2.12-2.0.war` generated earlier using `sbt package`, to the container webapps directory as `soda.war`.
+
     $ cp target/scala-2.12/soda_2.12-2.0.war ${TOMCAT_HOME}/webapps/soda.war  # for tomcat
     $ cp target/scala-2.12/soda_2.12-2.0.war ${JETTY_HOME}/webapps/soda.war  # for jetty
 
@@ -166,13 +187,6 @@ Restart the container.
     $ cd ${TOMCAT_HOME}; bin/shutdown.sh; bin/startup.sh  # for tomcat
     $ cd ${JETTY_HOME}; bin/jetty.sh stop; bin/jetty.sh start  # for jetty
 
-
-#### Deploy SoDA WAR file
-
-We only describe the command to deploy to the Jetty container, but the command to deploy to Apache is similar.
-
-    $ cp ${SOLR_HOME}/target/scala-2.12/soda_2.12-2.0.war ${JETTY_HOME}/webapps/soda.war
-    $ ${JETTY_HOME}/bin/jetty.sh start
 
 #### Verify Installation
 
