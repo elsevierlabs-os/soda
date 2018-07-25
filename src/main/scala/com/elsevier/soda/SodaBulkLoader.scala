@@ -1,7 +1,9 @@
 package com.elsevier.soda
 
+import java.nio.file.{Files, Paths}
+
 import akka.actor.{Actor, ActorSystem, Props}
-import com.elsevier.soda.messages.AddRequest
+import com.elsevier.soda.messages.{AddRequest, DeleteRequest}
 import com.google.gson.Gson
 import org.slf4j.LoggerFactory
 
@@ -10,21 +12,34 @@ import scala.io.Source
 
 object SodaBulkLoader extends App {
 
-    if (args.size != 3) {
+    if (args.size != 4) {
         val className = getClass.getName.replace("$", "")
-        Console.println("Usage: %s lexicon_name /path/to/input_file num_workers".format(className))
+        Console.println("Usage: %s lexicon_name /path/to/input_file num_workers delete_lexicon".format(className))
         System.exit(0)
     }
     val lexiconName = args(0)
     val inputPath = args(1)
     val numWorkers = args(2).toInt
+    val deleteLexicon = args(3).equalsIgnoreCase("true")
 
+    if (!Files.exists(Paths.get(inputPath))) {
+        Console.println(String.format("File %s: not found", inputPath))
+        System.exit(0)
+    }
     if (!validateFormat(inputPath)) {
         Console.println("Input file is malformed, check format")
         System.exit(0)
     }
+    if (deleteLexicon) {
+        val service = new SodaService()
+        val gson = new Gson()
+        val deleteRequest = DeleteRequest(lexiconName, "*")
+        val deleteResponse = service.deleteEntryOrLexicon(gson.toJson(deleteRequest))
+    }
 
     val loader = new SodaBulkLoader(lexiconName, inputPath, numWorkers)
+
+
 
     def validateFormat(inputPath: String): Boolean = {
         val src = Source.fromFile(inputPath)
@@ -32,6 +47,7 @@ object SodaBulkLoader extends App {
             val line = src.bufferedReader.readLine()
             // verify that there are two columns tab separated
             val hasValidColumnCount = (line.split("\t").size == 2)
+            // verify that second column is tab separated (if at all)
             val hasValidPipeSepCol = (line.split("\t")(1)).split("\\|").size >= 1
             hasValidColumnCount && hasValidPipeSepCol
         } finally {
@@ -119,7 +135,6 @@ class Worker(id: Int, lexiconName: String) extends Actor {
         }
         case StopMsg => {
             commitEntries()
-            context.stop(self)
             sender() ! StopMsg
         }
     }

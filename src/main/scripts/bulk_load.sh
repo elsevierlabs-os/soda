@@ -53,5 +53,6 @@ $REPOSITORY/log4j/log4j/bundles/log4j-1.2.17.jar
 LEXICON_NAME=$1
 INPUT_PATH=$2
 NUM_WORKERS=$3
-scala -cp $CLASSPATH com.elsevier.soda.SodaBulkLoader $LEXICON_NAME $INPUT_PATH $NUM_WORKERS
+DELETE_LEXICON=$4
+scala -cp $CLASSPATH com.elsevier.soda.SodaBulkLoader $LEXICON_NAME $INPUT_PATH $NUM_WORKERS $DELETE_LEXICON
 

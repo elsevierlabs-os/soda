@@ -200,9 +200,9 @@ You should be able to hit the SoDA index page at http://public\_ip:8080/soda/ind
 You can load a dictionary from a formatted tab-separated file using the SodaBulkLoader class provided with SoDA. Currently there is only a single main class, so SBT will not prompt for the class name to run. If prompted, choose the SodaBulkLoader class to run.
 
     $ sbt
-    sbt> run ${lexicon_name} ${path_to_input_file} number_of_workers
+    sbt> run ${lexicon_name} ${path_to_input_file} number_of_workers ${delete_lexicon}
 
-Where the lexicon\_name is the name of the dictionary the entries are to be loaded into, and the path\_to\_input\_file represents the full path to the tab-separated data file. The number\_of\_workers value should be equal or less than the number of CPUs on the SoDA/Solr box.
+Where the `lexicon_name` is the name of the dictionary the entries are to be loaded into, and the `path_to_input_file` represents the full path to the tab-separated data file. The `number_of_workers` value is the number of parallel workers that will be created to do the inserts and should be equal or less than the number of CPUs on the SoDA/Solr box. The `delete_lexicon` parameter can be set to either true or false, if true, it will first delete the named lexicon from the index before loading.
 
 The file must have the following format:
 
@@ -212,12 +212,11 @@ where {TAB} and {PIPE} represent the tab and pipe characters respectively.
 
 The id field must be unique across lexicons. It is recommended that the id value be structured as a URI that incorporates the lexicon name in it.
 
-If you prefer, there is also a script src/main/scripts/bulk\_load.sh which can be called as follows:
+If you prefer, there is also a script src/main/scripts/bulk\_load.sh which can be called as shown below. Note, however, that the classpath is based on a working sbt setup, with paths to JAR files pointing to the underlying ivy2 cache under the ${HOME} directory. If you have a different repository structure for your JAR files, you will very likely need to customize this script.
 
     $ cd src/main/scripts
-    $ ./bulk_load.sh lexicon_name /path/to/input_file.tsv num_workers
+    $ ./bulk_load.sh ${lexicon_name} ${path_to_input_file} ${num_workers} ${delete_lexicon}
 
-__NOTE__: The classpath is based on a working sbt setup, with paths to JAR files pointing to the underlying ivy2 cache. If you have a different repository structure for your JAR files, this is very likely to need customization for your use.
 
 ----
 
