@@ -34,6 +34,7 @@ The following ports need to be open on the server.
 All software is installed under the home directory of user `ubuntu`. 
 
 _**Optional: if you used an EBS volume for your storage**_
+
 If you used an external EBS volume, you would link the mount point to a directory under the home directory and that would become your installation directory. For example:
 
     $ cd /mnt
