@@ -192,7 +192,7 @@ Restart the container.
 
 #### Verify Installation
 
-You should be able to hit the SoDA index page at http://public\_ip:8080/soda/index.json, and it should return a JSON response saying "status": "ok" and the Solr version being used in the backend.
+You should be able to hit the SoDA index page at `http://public_ip:8080/soda/index.json`, and it should return a JSON response saying "status": "ok" and the Solr version being used in the backend.
 
 
 #### Automatic Startup and Shutdown
