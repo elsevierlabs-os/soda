@@ -9,3 +9,4 @@ project
 **/__pycache__
 **/*.properties
 **/.*.swp
+**/*.bak
