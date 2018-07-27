@@ -197,7 +197,7 @@ You should be able to hit the SoDA index page at http://public\_ip:8080/soda/ind
 
 #### Automatic Startup and Shutdown
 
-We leverage the Linux service management daemon systemd to automatically start and stop Solr and the SoDA container services after and before the server shuts down respectively. Support for systemd is available on Ubuntu 16.04 (the OS used in this guide), as well as AWS Linux, RHEL Centos 7.x and above, Debian 8 and above, Fedora, etc. The service makes assumptions about the location of the custom start and stop scripts (under `${SODA_HOME}/src/main/scripts`), the locations of the Solr installation (`${HOME}/solr-${version}`) and the web container (`${HOME}/apache-tomcat-${version}` or `${HOME}/jetty-distribution-${version}`), as well as the username (ubuntu) running the scripts. These values are baked inside the service description `soda.services` and the start and stop scripts `start_app.sh` and `stop_app.sh`, all under the `src/main/scripts` subdirectory. These assumptions are in line with the instructions so far, but it is likely that versions might have changed, so please make updates to these files as necessary for your installation.
+We leverage the Linux service management daemon systemd to automatically start and stop Solr and the SoDA container services after and before the server shuts down respectively. Support for systemd is available on Ubuntu 16.04 (the OS used in this guide), as well as AWS Linux, RHEL Centos 7.x and above, Debian 8 and above, Fedora, etc. The service makes assumptions about the location of the custom start and stop scripts (under `${SODA_HOME}/src/main/scripts`), the locations of the Solr installation (`${HOME}/solr-${version}`) and the web container (`${HOME}/apache-tomcat-${version}` or `${HOME}/jetty-distribution-${version}`), as well as the username (`ubuntu`) running the scripts. These values are baked inside the service description `soda.services` and the start and stop scripts `start_app.sh` and `stop_app.sh`, all under the `src/main/scripts` subdirectory. These assumptions are in line with the instructions so far, but it is likely that versions might have changed, so please make updates to these files as necessary for your installation.
 
 Here are the sequence of commands that are needed to allow the services to be started up and shut down automatically. First (after checking the contents), we will deploy our service definition to where systemd expects to find it.
 
@@ -209,7 +209,7 @@ Next we do a quick dry run to see if our scripts will run properly using systemd
     $ sudo systemctl start soda
     $ curl http://localhost:8080/soda/index.json
 
-Finally, we enable the service so it will run automatically whenever the server starts up, and stop the service with systemd, thereby also verifying that the `stop_app.sh` script works as intended.
+Finally, we enable the service so it will run automatically whenever the server starts up, and stop the service with systemd, thereby also verifying that the `stop_app.sh` script, which stops the two services in reverse order, works as intended.
 
     $ sudo systemctl enable soda
     $ sudo systemctl stop soda
