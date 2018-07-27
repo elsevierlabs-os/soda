@@ -1,0 +1,17 @@
+# The image ID for the first AMI you create manually
+IMAGE_ID=ami-eadcd495
+# We start with 0, AMI name is SodaSolrV2-AMI-v${IMAGE_VERSION}
+IMAGE_VERSION=0
+INSTANCE_TYPE=m5.xlarge
+# Path to your PEM file. During runtime, it will be temporarily copied to current dir
+KEY_FILE=/path/to/your/PEM/file
+# Subnet ID in which your AWS host will run
+SUBNET_ID=your-aws-subnet-id
+# Security groups for your AWS host
+SECURITY_GROUP_IDS=your-aws-security-group-id-1,your-aws-security-group-id-2,...
+# The private IP you want it assigned to. My setup is within a VPC, so having a standard
+# internal address is very helpful for all clients connecting to it
+PRIVATE_IP_ADDRESS=your-private-ip-address
+# The name and owner tags for the master EC2 box
+NAME_TAG=SodaSolrV2
+OWNER_TAG=your-email-address@your-company.com
