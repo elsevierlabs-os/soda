@@ -1,3 +1,4 @@
+#!/bin/bash
 # classpath setup
 # you may need to change this to suit your environment. In my case, 
 # these classpaths point to the same ivy2 cache that sbt reads from.
