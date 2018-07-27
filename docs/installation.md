@@ -13,7 +13,7 @@
   - [Install web server container](#install-web-server-container)
   - [Deploy SoDA WAR file](#deploy-soda-war-file)
   - [Verify Installation](#verify-installation)
-- [Automatic Startup and Shutdown](#automatic-startup-and-shutdown)
+  - [Automatic Startup and Shutdown](#automatic-startup-and-shutdown)
 - [Loading a Dictionary](#loading-a-dictionary)
 - [Running SoDA local tests](#running-soda-local-tests)
 
