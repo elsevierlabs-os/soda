@@ -1,0 +1,18 @@
+[Unit]
+Description=SoDA Application Service
+After=network.target
+After=systemd-user-sessions.service
+After=network-online.target
+
+[Service]
+User=ubuntu
+Type=forking
+ExecStart=/home/ubuntu/soda/src/main/scripts/start_app.sh
+ExecStop=/home/ubuntu/soda/src/main/scripts/stop_app.sh
+TimeoutSec=30
+Restart=on-failure
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target
+
