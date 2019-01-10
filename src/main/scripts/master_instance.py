@@ -246,7 +246,8 @@ def save(cfg_path):
 
 
 def main():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Start or stop master SoDA instance")
     parser.add_argument("-c", "--config", help="path to config file")
     parser.add_argument("-m", "--command", help="one of load|start|stop|save")
     args = parser.parse_args()

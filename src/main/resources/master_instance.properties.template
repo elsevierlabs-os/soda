@@ -1,7 +1,10 @@
-# The image ID for the first AMI you create manually
-IMAGE_ID=ami-eadcd495
+# The image ID and version for the first AMI you create manually
 # We start with 0, AMI name is SodaSolrV2-AMI-v${IMAGE_VERSION}
+# Note: this will get updated when you save a new AMI, so if you want to create a
+# cluster with this AMI, you need to manually copy over the updated value.
+IMAGE_ID=your-soda-ami-id
 IMAGE_VERSION=0
+# Instance type: m5.xlarge is a suggestion, choose per requirement.
 INSTANCE_TYPE=m5.xlarge
 # Path to your PEM file. During runtime, it will be temporarily copied to current dir
 KEY_FILE=/path/to/your/PEM/file
