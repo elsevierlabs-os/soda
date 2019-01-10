@@ -1,0 +1,33 @@
+# The image ID for the SoDA AMI
+# Note that this needs to be manually updated from whatever it is in your
+# master_instance.properties file
+IMAGE_ID=your-soda-ami-id
+# Instance type for each worker machine. m5.xlarge is a suggestion, choose per requirement.
+INSTANCE_TYPE=m5.xlarge
+# Path to your PEM file. During runtime, it will be temporarily copied to current directory.
+KEY_FILE=/path/to/your/PEM/file
+# Subnet ID in which the cluster will run. Usually this is a private subnet.
+SUBNET_ID=your-aws-subnet-id
+# Security groups for the worker machines. Typically, worker machines will reside in private
+# subnets of your VPC, but the load balancer will be in a public subnet. Security groups 
+# must ensure access to your HTTP_PORT from the load balancer to the worker machines.
+SECURITY_GROUP_IDS=your-security-group-id-1,your-security-group-id-2,...
+# Load balancer properties
+# VPC_ID for VPC in which the Application Load Balancer (ALB) will run
+LB_VPC_ID=your-aws-vpc-id
+# Subnet IDs in which the the ALB will run. Must be at least 2.
+LB_SUBNET_IDS=your-public-subnet-id-1,your-public-subnet-id-2,...
+# Security groups for the ALB
+LB_SECURITY_GROUP_IDS=your-lb-security-group-id-1,your-lb-security-group-id-2,...
+# SoDA status URL, this will be used by ALB to healthcheck workers in cluster.
+LB_STATUS_URL=/soda/index.json
+# Name and owner tags for ALB and worker machines. The ALB will be given a Name tag
+# of ${NAME_TAG}-alb, and worker machines will be named ${NAME_TAG}-worker-{n}, where
+# n is a number starting with 1.
+NAME_TAG=SodaSolrV2
+OWNER_TAG=ELS-Labs@elsevier.com
+# This was added because our AWS admin created security groups for HTTP ingress on 
+# port 80 while SoDA typically listens on port 8080. We needed to create some iptables
+# rules to forward port 80 to 8080, and we set the HTTP_PORT to 80 instead. If you
+# don't have this issue, just follow the instructions and keep the port set to 8080.
+HTTP_PORT=8080
