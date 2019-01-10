@@ -105,6 +105,7 @@ def start_instances(conf_dict, num_slaves):
                 .format(status))
             continue
         instance_ids.append(resp["Instances"][0]["InstanceId"])
+    remove_pem_file(conf_dict["KEY_FILE"])
     return instance_ids
 
 
