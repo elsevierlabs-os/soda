@@ -25,7 +25,7 @@ LB_STATUS_URL=/soda/index.json
 # of ${NAME_TAG}-alb, and worker machines will be named ${NAME_TAG}-worker-{n}, where
 # n is a number starting with 1.
 NAME_TAG=SodaSolrV2
-OWNER_TAG=ELS-Labs@elsevier.com
+OWNER_TAG=your-email-address@your-company.com
 # This was added because our AWS admin created security groups for HTTP ingress on 
 # port 80 while SoDA typically listens on port 8080. We needed to create some iptables
 # rules to forward port 80 to 8080, and we set the HTTP_PORT to 80 instead. If you
