@@ -15,9 +15,9 @@
   - [Verify Installation](#verify-installation)
 - [Deployment](#deployment)
   - [Automatic Startup and Shutdown](#automatic-startup-and-shutdown)
-  - [Building an AMI (AWS)](#building-an-ami)
-  - [AMI Maintenance (AWS)](#ami-maintenance-on-aws)
-  - [Spinning up Read-only Clusters (AWS)](#spinning-up-read-only-aws-clusters)
+  - [Building an AMI (AWS)](#building-an-ami-aws)
+  - [AMI Maintenance (AWS)](#ami-maintenance-aws)
+  - [Spinning up Read-only Clusters (AWS)](#spinning-up-read-only-clusters-aws)
 - [Loading a Dictionary](#loading-a-dictionary)
 - [Running SoDA local tests](#running-soda-local-tests)
 
