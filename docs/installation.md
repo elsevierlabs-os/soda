@@ -13,7 +13,11 @@
   - [Install web server container](#install-web-server-container)
   - [Deploy SoDA WAR file](#deploy-soda-war-file)
   - [Verify Installation](#verify-installation)
+- [Deployment](#deployment)
   - [Automatic Startup and Shutdown](#automatic-startup-and-shutdown)
+  - [Building an AMI (AWS)](#building-an-ami)
+  - [AMI Maintenance (AWS)](#ami-maintenance-on-aws)
+  - [Spinning up Read-only Clusters (AWS)](#spinning-up-read-only-aws-clusters)
 - [Loading a Dictionary](#loading-a-dictionary)
 - [Running SoDA local tests](#running-soda-local-tests)
 
@@ -194,6 +198,9 @@ Restart the container.
 
 You should be able to hit the SoDA index page at `http://public_ip:8080/soda/index.json`, and it should return a JSON response saying "status": "ok" and the Solr version being used in the backend.
 
+----
+
+### Deployment
 
 #### Automatic Startup and Shutdown
 
@@ -213,6 +220,116 @@ Finally, we enable the service so it will run automatically whenever the server 
 
     $ sudo systemctl enable soda
     $ sudo systemctl stop soda
+
+
+#### Building an AMI (AWS)
+
+The motivation for this part of the deployment was that the SoDA service is not very frequently used, so it seemed like a waste of resources to keep it running constantly. Now that we are able to start and stop the services automatically, there is less chance of human error around this step, so it now became more practical to have it be be shut down by default and only available on demand.
+
+The next step along this evolutionary path was to replace the stopped server by a machine image (AMI). Because Amazon Web Services (AWS) is our cloud provider, the implementation below is AWS specific. However, the idea can probably be implemented with other cloud platforms as well. If you have done so and feel like sharing, please send me a link and I will include it here.
+
+An AMI based workflow has a number of other advantages as well. For the dictionary and software maintainer, it acts as another "last known good configuration" checkpoint, similar to code commits. In addition, it allows different groups to start from the same AMI and diverge as needed. On the client side, the AMI approach allows easy cloning of multiple slaves. The two use cases (maintenance and usage) are shown in the diagram below, and the sections below describe scripts that can be used to achieve these use cases.
+
+<img src="aws-workflow.png"/>
+
+The very first AMI will need to be created manually. Once you have loaded up the software on an EC2 instance and implemented automatic startup and shutdown, use the AWS console to create an AMI of the current instance, following the [AWS Documentation for this](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/creating-an-ami-ebs.html). For convenience, I increased the size of my root partition to 60 GB rather than adding an EBS volume.
+
+#### AMI Maintenance (AWS)
+
+The first use case is that of dictionary and software maintenance. The requirement here is that you should be able to create an instance from your AMI, then make changes to the software or dictionary, and be able to generate a new AMI from the changes when you are happy with the changes you made. The `master_instance.py` script in the `src/main/scripts` folder is provided for this:
+
+    $ python master_instance.py -h
+    usage: master_instance.py [-h] [-c CONFIG] [-m COMMAND]
+    
+    Start or stop master SoDA instance
+    
+    optional arguments:
+      -h, --help            show this help message and exit
+      -c CONFIG, --config CONFIG
+                            path to config file
+      -m COMMAND, --command COMMAND
+                            one of load|start|stop|save
+
+Using this script, you can `start` or `stop` the master SoDA instance from the command line of your client machine. In addition, once you are happy with changes you have made and want to persist it into a new AMI, you can run the script with the `save` command, then rerun with the `load` command to restart with the new AMI.
+
+You also have to specify configuration parameters specified within a configuration file as name-value (Java style) properties. In the `src/main/resources` directory, there is a `master_instance.properties.template` file that specifies the parameters that you need to provide. See the inline comments for more information. Please keep a copy of this file because the script computes configuration parameters as it runs and will overwrite the configuration file name provided (and remove the comments in the process).
+
+    # The image ID and version for the first AMI you create manually
+    # We start with 0, AMI name is SodaSolrV2-AMI-v${IMAGE_VERSION}
+    # Note: this will get updated when you save a new AMI, so if you want to create a
+    # cluster with this AMI, you need to manually copy over the updated value.
+    IMAGE_ID=your-soda-ami-id
+    IMAGE_VERSION=0
+    # Instance type: m5.xlarge is a suggestion, choose per requirement.
+    INSTANCE_TYPE=m5.xlarge
+    # Path to your PEM file. During runtime, it will be temporarily copied to current dir
+    KEY_FILE=/path/to/your/PEM/file
+    # Subnet ID in which your AWS host will run
+    SUBNET_ID=your-aws-subnet-id
+    # Security groups for your AWS host
+    SECURITY_GROUP_IDS=your-aws-security-group-id-1,your-aws-security-group-id-2,...
+    # The private IP you want it assigned to. My setup is within a VPC, so having a standard
+    # internal address is very helpful for all clients connecting to it
+    PRIVATE_IP_ADDRESS=your-private-ip-address
+    # The name and owner tags for the master EC2 box
+    NAME_TAG=SodaSolrV2
+    OWNER_TAG=your-email-address@your-company.com
+
+
+#### Spinning up Read-only Clusters (AWS)
+
+The second use case is to easily spin up large clusters without too much effort. In this mode, we are not interested in maintainining the dictionaries or updating the software, but rather using the service to annotate our text. Because each SoDA request is stateless, it is possible to scale SoDA out horizontally as shown in the diagram and achieve linear throughput gains. You can spin up a cluster by providing a configuration file and the number of workers in the cluster using the `cluster_instance.py` in the `src/main/scripts` folder as shown below.
+
+    $ python cluster_instance.py -h
+    usage: cluster_instance.py [-h] [-c CONFIG] [-n NUM_SLAVES] [-m COMMAND]
+    
+    Start or stop read-only SoDA cluster
+    
+    optional arguments:
+      -h, --help            show this help message and exit
+      -c CONFIG, --config CONFIG
+                            path to config file
+      -n NUM_SLAVES, --num_slaves NUM_SLAVES
+                            number of SoDA slaves
+      -m COMMAND, --command COMMAND
+                            one of start|stop
+
+Here the commands are `start` and `stop`, which will create the number of worker SoDA instances from the AMI and put it behind an AWS Application Load Balancer (ALB). The `---num_slaves` parameter specifies how many workers are needed for the cluster, and the configuration file specified by the `--config` parameter contains name-value pairs in Java properties file format. As with the previous script, the `src/main/resources` folder contains a template file `cluster_instance.properties.template` which is shown below. Please make a copy of this file before calling the command above because the file name provided via the `--config` parameter will be updated by the script and the comments will be removed.
+
+    # The image ID for the SoDA AMI
+    # Note that this needs to be manually updated from whatever it is in your
+    # master_instance.properties file
+    IMAGE_ID=your-soda-ami-id
+    # Instance type for each worker machine. m5.xlarge is a suggestion, choose per requirement.
+    INSTANCE_TYPE=m5.xlarge
+    # Path to your PEM file. During runtime, it will be temporarily copied to current directory.
+    KEY_FILE=/path/to/your/PEM/file
+    # Subnet ID in which the cluster will run. Usually this is a private subnet.
+    SUBNET_ID=your-aws-subnet-id
+    # Security groups for the worker machines. Typically, worker machines will reside in private
+    # subnets of your VPC, but the load balancer will be in a public subnet. Security groups 
+    # must ensure access to your HTTP_PORT from the load balancer to the worker machines.
+    SECURITY_GROUP_IDS=your-security-group-id-1,your-security-group-id-2,...
+    # Load balancer properties
+    # VPC_ID for VPC in which the Application Load Balancer (ALB) will run
+    LB_VPC_ID=your-aws-vpc-id
+    # Subnet IDs in which the the ALB will run. Must be at least 2.
+    LB_SUBNET_IDS=your-public-subnet-id-1,your-public-subnet-id-2,...
+    # Security groups for the ALB
+    LB_SECURITY_GROUP_IDS=your-lb-security-group-id-1,your-lb-security-group-id-2,...
+    # SoDA status URL, this will be used by ALB to healthcheck workers in cluster.
+    LB_STATUS_URL=/soda/index.json
+    # Name and owner tags for ALB and worker machines. The ALB will be given a Name tag
+    # of ${NAME_TAG}-alb, and worker machines will be named ${NAME_TAG}-worker-{n}, where
+    # n is a number starting with 1.
+    NAME_TAG=SodaSolrV2
+    OWNER_TAG=your-email-address@your-company.com
+    # This was added because our AWS admin created security groups for HTTP ingress on 
+    # port 80 while SoDA typically listens on port 8080. We needed to create some iptables
+    # rules to forward port 80 to 8080, and we set the HTTP_PORT to 80 instead. If you
+    # don't have this issue, just follow the instructions and keep the port set to 8080.
+    HTTP_PORT=8080
+
 
 ----
 
