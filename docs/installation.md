@@ -133,11 +133,12 @@ Build SoDA. The build artifacts can be found in the target/scala-2.12 folder. Th
 
 #### Install and Configure Solr 
 
-Install Apache Solr. The latest version at the time of release was Solr 7.4.0.
+Install Apache Solr. The latest version at the time of release was Solr 7.7.2.
 
-    $ curl -O http://apache.mirrors.pair.com/lucene/solr/7.4.0/solr-7.4.0.tgz
-    $ tar xvzf solr-7.4.0.tar.gz
-    $ cd solr-7.4.0
+    $ curl -O http://apache.mirrors.pair.com/lucene/solr/7.7.2/solr-7.7.2.tgz
+    $ tar xvzf solr-7.7.2.tar.gz
+    $ cd solr-7.7.2
+    $ export SODA_HOME=`pwd`
 
 Install the SolrTextTagger SNAPSHOT JAR file into Solr's lib directory.
 
@@ -167,7 +168,7 @@ Add the SolrTextTagger handler to the Solr configuration. As with the schema, we
 
 Restart Solr to allow the schema and configuration changes to take effect.
 
-    $ bon/solr restart
+    $ bin/solr restart
 
 #### Install web server container
 
